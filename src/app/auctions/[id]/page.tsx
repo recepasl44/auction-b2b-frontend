@@ -1,0 +1,738 @@
+'use client';
+
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  SyntheticEvent,
+} from 'react';
+import { useParams } from 'next/navigation';
+import io, { Socket } from 'socket.io-client';
+import axiosClient from '@/services/axiosClient';
+import { parseIsoAsLocal } from '@/lib/parseIsoAsLocal';
+
+import {
+  Box,
+  Grid,
+  Card,
+  CardHeader,
+  CardContent,
+  Typography,
+  Button,
+  Stack,
+  CircularProgress,
+  Divider,
+  TextField,
+  Tabs,
+  Tab,
+  ThemeProvider,
+  createTheme,
+  AppBar,
+  Toolbar,
+  Snackbar,
+  Alert,
+  Chip,
+  Avatar,
+  Paper,
+} from '@mui/material';
+
+
+//------------------------------------------------------------------
+// Types
+//------------------------------------------------------------------
+interface Auction {
+  id: number;
+  description: string;
+  title: string;
+  lastOffer?: string;
+  your_nickname?: string;
+  startTime: string;
+  endTime: string;
+  startPrice: string;
+  incrementStep: string;
+  baseCurrency: string;
+  status?: string;
+  endPrice?: string;
+  sellerType?: string;
+  isSold?: boolean;
+  location?: string;
+  categoryPath?: string;
+  product: Product;
+  invites: Invite[];
+}
+
+interface Product {
+  id: number;
+  name: string;
+  category: string;
+  description: string;
+  priceType: string;
+  destinationPort: string;
+  orderQuantity: number;
+  images: string[];
+  attributes: Record<string, string>;
+}
+
+interface Invite {
+  inviteId: number;
+  inviteStatus: string;
+  nickname: string;
+  manufacturerId?: number;
+}
+
+interface Bid {
+  auctionId: number;
+  nickname: string;
+  amount: number;
+  timestamp: string;
+  message?: string;
+  price?: string;
+  date?: string;
+}
+
+//------------------------------------------------------------------
+// Theme – marka rengi, font, vs.
+//------------------------------------------------------------------
+const customTheme = createTheme({
+  palette: {
+    primary: { main: '#FFCC00' }, // marka vurgusu (sarı)
+    secondary: { main: '#6A5BFF' }, // CTA (mor)
+    text: {
+      primary: '#333333',
+      secondary: '#6E6E76',
+    },
+    success: { main: '#0E8345' },
+  },
+  typography: {
+    fontFamily: 'Inter, Roboto, Helvetica, Arial, sans-serif',
+    h1: { fontSize: 32, fontWeight: 700 },
+    h2: { fontSize: 24, fontWeight: 700 },
+    body1: { fontSize: 16 },
+    body2: { fontSize: 14 },
+  },
+  shape: {
+    borderRadius: 4, // Kart köşeleri 4 px
+  },
+});
+
+//------------------------------------------------------------------
+// Stil eklemeleri (Flip clock, pulse, vb.)
+//------------------------------------------------------------------
+const extraStyles = `
+/* Flip clock basamak */
+.flip-clock{position:relative;perspective:1000px;width:64px;height:80px;margin:0 4px;display:inline-block}
+.flip-clock .upper,.flip-clock .lower{width:100%;height:50%;overflow:hidden;background:#222;color:#FFCC00;font-size:40px;font-weight:bold;display:flex;align-items:center;justify-content:center;position:absolute;left:0}
+.flip-clock .upper{top:0;border-bottom:1px solid #333;border-top-left-radius:4px;border-top-right-radius:4px}
+.flip-clock .lower{bottom:0;border-top:1px solid #333;border-bottom-left-radius:4px;border-bottom-right-radius:4px}
+.flip-clock .flip{animation:flip 0.7s linear forwards;transform-origin:center bottom}
+@keyframes flip{0%{transform:rotateX(0deg)}100%{transform:rotateX(-90deg)}}
+/* Pulse animasyonu  <10 sn */
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+/* Toast fadeInChat */
+@keyframes fadeInChat{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+`;
+
+//------------------------------------------------------------------
+// FlipCard & Countdown3D bileşenleri
+//------------------------------------------------------------------
+function FlipCard({ digit }: { digit: string }) {
+  const [current, setCurrent] = useState(digit);
+  const [flip, setFlip] = useState(false);
+   
+  useEffect(() => {
+    if (digit !== current) {
+      setFlip(true);
+      setTimeout(() => {
+        setCurrent(digit);
+        setFlip(false);
+      }, 700);
+    }
+  }, [digit, current]);
+
+  return (
+    <Box className="flip-clock">
+      <Box className="upper">{current}</Box>
+      <Box className="lower">{digit}</Box>
+      {flip && <Box className="upper flip">{current}</Box>}
+    </Box>
+  );
+}
+
+function Countdown3D({ timeText }: { timeText: string }) {
+  const parts = timeText.split('');
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      {parts.map((ch, i) =>
+        ch === ':' ? (
+          <Typography key={i} sx={{ mx: 0.5, fontSize: 32, fontWeight: 'bold', color: '#333' }}>
+            :
+          </Typography>
+        ) : (
+          <FlipCard key={i} digit={ch} />
+        )
+      )}
+    </Box>
+  );
+}
+
+//------------------------------------------------------------------
+// SimpleCountdown – pulse & sticky davranış
+//------------------------------------------------------------------
+function SimpleCountdown({ endTime }: { endTime: string }) {
+  const [time, setTime] = useState('00:00');
+  const [pulse, setPulse] = useState(false);
+
+  useEffect(() => {
+    if (!endTime) return;
+    const target = parseIsoAsLocal(endTime);   // 11:48 (yerel)
+
+    const tick = () => {
+      const diff = Math.max(target - Date.now(), 0);
+      const mins = Math.floor(diff / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      const mm = String(mins).padStart(2, '0');
+      const ss = String(secs).padStart(2, '0');
+      setTime(`${mm}:${ss}`);
+      setPulse(diff <= 10_000); // <10 sn ise pulse
+    };
+
+    tick();
+    const iv = setInterval(tick, 1_000);
+    return () => clearInterval(iv);
+  }, [endTime]);
+
+  return (
+    <Box
+      sx={{
+        bgcolor: '#000',
+        color: '#FFCC00',
+        px: 1.5,
+        py: 0.5,
+        borderRadius: 1,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
+        animation: pulse ? 'pulse 0.2s ease-in-out infinite' : 'none',
+      }}
+    >
+      <Typography variant="body1" fontWeight={700}>
+        {time}
+      </Typography>
+    </Box>
+  );
+}
+
+//------------------------------------------------------------------
+// Header – sticky search bar
+//------------------------------------------------------------------
+function Header({ nickname }: { nickname?: string }) {
+  return (
+    <AppBar position="sticky" color="inherit" elevation={1} sx={{ backdropFilter: 'blur(6px)' }}>
+      <Toolbar sx={{ gap: 2 }}>
+        {/* Search */}
+        <Box sx={{ position: 'relative', flexGrow: 1 }}>
+  
+        </Box>
+
+            Geçici Kullanıcı Adınız{nickname && (
+          <Typography variant="subtitle1" fontWeight="bold" color="text.primary">
+            {nickname}
+          </Typography>
+        )}
+      </Toolbar>
+    </AppBar>
+  );
+}
+
+//------------------------------------------------------------------
+// Footer – basit footer
+//------------------------------------------------------------------
+function Footer() {
+  return (
+    <Paper
+      component="footer"
+      square
+      elevation={0}
+      sx={{ mt: 6, py: 3, textAlign: 'center', backgroundColor: '#1A1D23' }}
+    >
+      <Typography variant="body2" color="#fff" fontWeight={600}>
+        © {new Date().getFullYear()} Demaxtore Auction Company — All Rights Reserved
+      </Typography>
+    </Paper>
+  );
+}
+
+//------------------------------------------------------------------
+// Main page component
+//------------------------------------------------------------------
+export default function AuctionPage() {
+  const { id } = useParams() as { id: string };
+  const auctionId = Number(id);
+
+  const socketRef = useRef<typeof Socket | null>(null);
+
+  const [auction, setAuction] = useState<Auction | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [bids, setBids] = useState<Bid[]>([]);
+  const [currentPrice, setCurrentPrice] = useState(0);
+  const [highlightIndex, setHighlightIndex] = useState<number | null>(null);
+  const [isActive, setIsActive] = useState<boolean>(true);
+  const [autoBid, setAutoBid] = useState(false);
+  const lastAutoBid = useRef<number>(0);
+  const [activeTab, setActiveTab] = useState(0);
+  const [toast, setToast] = useState<{ open: boolean; msg: string; type: 'success' | 'error' }>({ open: false, msg: '', type: 'success' });
+   
+
+  const fetchAuction = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data } = await axiosClient.get<{ auction: Auction }>(`/auctions/${auctionId}`);
+      const raw = data.auction;
+      setAuction(raw);
+      setCurrentPrice(parseFloat(raw.lastOffer ?? raw.startPrice));
+
+      // Bid history
+      interface BidResponse {
+        auction: Array<{ nickname: string; price: string; date: string }>;
+      }
+      try {
+        const bidResp = await axiosClient.get<BidResponse>(`/auctions/placeBid/${auctionId}`);
+        const arr: Bid[] = (bidResp.data.auction || []).map((b) => ({
+          auctionId,
+          nickname: b.nickname,
+          amount: parseFloat(String(b.price).replace(/[^0-9.]/g, '')),
+          timestamp: b.date,
+          price: b.price,
+          date: b.date,
+        }));
+        setBids(arr);
+        if (arr.length > 0) {
+          const last = arr[arr.length - 1];
+          lastAutoBid.current = last.amount;
+        }
+      } catch (e) {
+        console.error('fetch bids', e);
+      }
+
+const now   = Date.now();
+const start = parseIsoAsLocal(raw.startTime);     // 10:12 yerel
+const end   = parseIsoAsLocal(raw.endTime);       // 11:48 yerel
+setIsActive(now >= start && now <= end);
+console.log('isActive?', new Date(now), new Date(start), new Date(end),
+            now >= start && now <= end);
+setIsActive(now >= start && now <= end);
+      setError('');
+    } catch (err) {
+      console.error(err);
+      setError('Auction couldn\'t be loaded');
+    } finally {
+      setLoading(false);
+    }
+  }, [auctionId]);
+
+  useEffect(() => {
+    fetchAuction();
+  }, [fetchAuction]);
+
+  //----------------------------------------------------------------
+  // Socket
+  //----------------------------------------------------------------
+  useEffect(() => {
+    if (!auction) return;
+    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://backendauction.recepaslan.com.tr';
+    const socket = io(SOCKET_URL, { path: '/socket.io' });
+    socketRef.current = socket as unknown as typeof Socket;
+
+    socket.on('connect', () => {
+      socket.emit('joinAuction', { auctionId, role: 'customer' });
+    });
+
+    socket.on('bidUpdated', (payload: Bid) => {
+      if (payload.auctionId !== auctionId) return;
+      setBids((prev) => {
+        const arr = [...prev, payload];
+        setHighlightIndex(arr.length - 1);
+        setTimeout(() => setHighlightIndex(null), 1000);
+        return arr;
+      });
+      setCurrentPrice(payload.amount);
+      setToast({ open: true, msg: 'Yeni teklif alındı', type: 'success' });
+    });
+
+    return () => {
+      socket.disconnect();
+    };  }, [auction, auctionId]);
+
+  //----------------------------------------------------------------
+  // Auto‑bid
+  //----------------------------------------------------------------
+  useEffect(() => {
+    if (!autoBid || !auction) return;
+    const last = bids[bids.length - 1];
+    if (!last || last.nickname === auction.your_nickname) return;
+
+    const step = parseFloat(auction.incrementStep || '1');
+    const max = parseFloat(auction.endPrice || 'Infinity');
+    const next = last.amount + step;
+
+    if (next > max || next <= lastAutoBid.current) return;
+
+    lastAutoBid.current = next;
+    placeBid(next);
+  }, [bids, autoBid, auction]);
+
+  //----------------------------------------------------------------
+  // placeBid
+  //----------------------------------------------------------------
+  const placeBid = async (amount: number) => {
+    if (!auction) return;
+
+    const start = parseFloat(auction.startPrice || '0');
+    const end = parseFloat(auction.endPrice || 'Infinity');
+    const step = parseFloat(auction.incrementStep || '1');
+
+    if (amount < start || amount > end) {
+      setToast({ open: true, msg: 'Teklif aralık dışında', type: 'error' });
+      return;
+    }
+    if (amount <= currentPrice) {
+      setToast({ open: true, msg: 'Daha yüksek teklif verin', type: 'error' });
+      return;
+    }
+    if ((amount - start) % step !== 0 || amount - currentPrice < step) {
+      setToast({ open: true, msg: `Minimum artış ${step}`, type: 'error' });
+      return;
+    }
+
+    try {
+      await axiosClient.post('/auctions/placeBid', {
+        auctionId,
+        amount,
+        userId: JSON.parse(localStorage.getItem('auth-data') || '{}').user?.id,
+        userCurrency: auction.baseCurrency,
+      });
+      setToast({ open: true, msg: 'Teklif gönderildi', type: 'success' });
+    } catch (err) {
+      console.error(err);
+      setToast({ open: true, msg: 'Teklif hatası', type: 'error' });
+    }
+  };
+
+  //----------------------------------------------------------------
+  // UI Yardımcıları
+  //----------------------------------------------------------------
+  const handleChangeTab = (_: SyntheticEvent, v: number) => setActiveTab(v);
+
+  const step = parseFloat(auction?.incrementStep || '1');
+  const endLimit = parseFloat(auction?.endPrice || 'Infinity');
+  const nextPrices = [1, 2, 3].map((mult) => Math.min(currentPrice + step * mult, endLimit));
+
+  //----------------------------------------------------------------
+  // Left Card
+  //----------------------------------------------------------------
+  const LeftCard = () => (
+    <Card elevation={2} sx={{ p: 2 }}>
+      {/* Kategori badge */}
+      {auction?.categoryPath && (
+        <Box
+          sx={{ position: 'absolute', top: 12, right: 12, bgcolor: 'primary.main', px: 1, py: 0.25, borderRadius: 1 }}
+        >
+          <Typography variant="caption" fontWeight={600}>
+            {auction.categoryPath}
+          </Typography>
+        </Box>
+      )}
+
+      {/* Başlık & konum */}
+      <Typography variant="h1" gutterBottom>
+        {auction?.title}
+      </Typography>
+      <Divider sx={{ mb: 2 }} />
+      {auction?.location && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {auction.location}
+        </Typography>
+      )}
+
+      {/* Görsel */}
+      {auction?.product?.images?.[0] ? (
+        <Box
+          component="img"
+          src={auction.product.images[0]}
+          sx={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', borderRadius: 2, mb: 2 }}
+          alt="Ürün görseli"
+        />
+      ) : (
+        <Box
+          sx={{
+            width: '100%',
+            aspectRatio: '3 / 2',
+            background: 'linear-gradient(135deg, #f2f2f2 0%, #e6e6e6 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 2,
+            mb: 2,
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            Fotoğraf bulunamadı
+          </Typography>
+        </Box>
+      )}
+
+      {/* Tabs */}
+      <Tabs
+        value={activeTab}
+        onChange={handleChangeTab}
+        variant="scrollable"
+        scrollButtons="auto"
+        sx={{
+          '& .MuiTabs-indicator': { bgcolor: 'primary.main', height: 3, borderRadius: 2 },
+          mb: 1,
+        }}
+      >
+        <Tab label="Ürün Özellikleri" />
+        <Tab label="Açıklama" />
+        <Tab label="Teknik Form" />
+      </Tabs>
+      <Divider sx={{ mb: 2 }} />
+
+      {/* Tab content */}
+      {activeTab === 0 && (
+        <Stack spacing={1}>
+          {Object.entries(auction?.product?.attributes || {}).map(([k, v]) => (
+            <Stack
+              key={k}
+              direction="row"
+              spacing={1}
+              sx={{ p: 1, bgcolor: '#FAFAFA', borderRadius: 1 }}
+            >
+              <Typography variant="body2" fontWeight={600} sx={{ minWidth: 120 }}>
+                {k}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {v}
+              </Typography>
+            </Stack>
+          ))}
+        </Stack>
+      )}
+      {activeTab === 1 && (
+        <Typography variant="body2" whiteSpace="pre-wrap">
+          {auction?.product?.description}
+        </Typography>
+      )}
+      {activeTab === 2 && (
+        <Stack spacing={1}>
+          <Typography variant="body2">Price Type: {auction?.product?.priceType}</Typography>
+          <Typography variant="body2">Destination Port: {auction?.product?.destinationPort}</Typography>
+          <Typography variant="body2">Order Quantity: {auction?.product?.orderQuantity}</Typography>
+        </Stack>
+      )}
+    </Card>
+  );
+
+  //----------------------------------------------------------------
+  // Right Card
+  //----------------------------------------------------------------
+  const RightCard = () => (
+    <Card elevation={2} sx={{ p: 2, position: 'relative' }}>
+      {/* Sticky countdown */}
+      <Box sx={{ position: 'sticky', top: 16, ml: 'auto', width: 'fit-content' }}>
+        {auction && <SimpleCountdown endTime={auction.endTime} />}
+      </Box>
+
+      {/* Ürün No & start price */}
+      <Stack spacing={1} sx={{ mt: 1 }}>
+        <Typography variant="h2">Ürün No: {auction?.id}</Typography>
+        <Divider />
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Typography variant="body2" color="text.secondary">
+            Başlangıç Fiyatı
+          </Typography>
+          <Typography variant="body1" fontWeight={700}>
+            {parseFloat(auction?.startPrice || '0').toLocaleString()} {auction?.baseCurrency}
+          </Typography>
+        </Stack>
+        <Divider />
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Typography variant="body2" color="text.secondary">
+            Mevcut Teklif
+          </Typography>
+          <Typography variant="h4" color="success.main" fontWeight={700}>
+            {currentPrice.toLocaleString()} {auction?.baseCurrency}
+          </Typography>
+        </Stack>
+      </Stack>
+
+      {/* Quick increment buttons */}
+      <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ my: 2 }}>
+        {nextPrices.map((p, idx) => (
+          <Chip
+            key={idx}
+            label={`+${(p - currentPrice).toLocaleString()}`}
+            color="primary"
+            clickable
+            onClick={() => placeBid(p)}
+            sx={{ borderRadius: 9999, fontWeight: 600 }}
+          />
+        ))}
+      </Stack>
+
+      {/* Manual bid */}
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+        <TextField
+          placeholder="Manuel Teklif"
+          size="small"
+          type="number"
+          defaultValue={nextPrices[0]}
+          sx={{ flex: 1 }}
+          onKeyDown={(e) => e.key === 'Enter' && placeBid(Number((e.target as HTMLInputElement).value))}
+        />
+        <Button
+          variant="contained"
+          color="secondary"
+          sx={{ fontWeight: 700, px: 3 }}
+          onClick={() => {
+            const input = document.querySelector<HTMLInputElement>('input[placeholder="Manuel Teklif"]');
+            if (input) placeBid(Number(input.value));
+          }}
+        >
+          TEKLİF VER
+        </Button>
+      </Stack>
+
+      {/* Auto‑bid toggle */}
+      <Button
+        variant="outlined"
+        color={autoBid ? 'error' : 'inherit'}
+        fullWidth
+        sx={{ borderColor: autoBid ? 'error.main' : '#B00020', color: autoBid ? 'error.main' : '#B00020', mb: 2, fontWeight: 600 }}
+        onClick={() => setAutoBid((prev) => !prev)}
+      >
+        {autoBid ? 'Otomatik Teklifi Durdur' : 'Otomatik Teklif Moduna Geç'}
+      </Button>
+
+      {/* Bid history */}
+      <Typography variant="h2" sx={{ mb: 1 }}>
+        Teklif Geçmişi
+      </Typography>
+      <Divider sx={{ mb: 1 }} />
+      <Box sx={{ maxHeight: 320, overflowY: 'auto', pr: 1 }}>
+        {bids.length === 0 && (
+          <Typography variant="body2" color="text.secondary">
+            Henüz teklif yok
+          </Typography>
+        )}
+        {bids.map((b, i) => (
+          <Stack
+            key={i}
+            direction="row"
+            spacing={1.5}
+            alignItems="center"
+            sx={{
+              p: 1,
+              borderRadius: 1,
+              '&:hover': { backgroundColor: '#F5F5F5' },
+              backgroundColor: highlightIndex === i ? 'rgba(255, 204, 0, 0.2)' : 'transparent',
+              animation: highlightIndex === i ? 'fadeInChat 0.5s' : 'none',
+            }}
+          >
+            <Avatar sx={{ width: 32, height: 32, bgcolor: '#1A1D23', fontSize: 12 }}>
+              {b.nickname.charAt(0).toUpperCase()}
+            </Avatar>
+            <Stack spacing={0.5} sx={{ flexGrow: 1 }}>
+              <Typography variant="body2" fontWeight={600}>
+                {b.nickname}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {(b.price || `${b.amount.toLocaleString()} ${auction?.baseCurrency}`)}
+              </Typography>
+            </Stack>
+            <Typography variant="caption" color="text.secondary">
+              {new Date(b.date || b.timestamp).toLocaleTimeString('tr-TR', {
+                minute: '2-digit',
+                second: '2-digit',
+              })}
+            </Typography>
+          </Stack>
+        ))}
+      </Box>
+    </Card>
+  );
+
+  //----------------------------------------------------------------
+  // Render states (loading, error, inactive)
+  //----------------------------------------------------------------
+  if (loading) {
+    return (
+      <ThemeProvider theme={customTheme}>
+        <style>{extraStyles}</style>
+        <Header />
+        <Stack alignItems="center" sx={{ mt: 8 }}>
+          <CircularProgress />
+        </Stack>
+      </ThemeProvider>
+    );
+  }
+  if (error || !auction) {
+    return (
+      <ThemeProvider theme={customTheme}>
+        <style>{extraStyles}</style>
+        <Header />
+        <Typography sx={{ mt: 8, textAlign: 'center' }} color="error">
+          {error || 'Auction bulunamadı'}
+        </Typography>
+      </ThemeProvider>
+    );
+  }
+  if (!isActive) {
+    return (
+      <ThemeProvider theme={customTheme}>
+        <style>{extraStyles}</style>
+        <Header nickname={auction.your_nickname} />
+        <Typography sx={{ mt: 8, textAlign: 'center' }}>
+          İhale aktif değil.
+        </Typography>
+      </ThemeProvider>
+    );
+  }
+
+  //----------------------------------------------------------------
+  // Main render
+  //----------------------------------------------------------------
+  return (
+    <ThemeProvider theme={customTheme}>
+      <style>{extraStyles}</style>
+
+      <Header nickname={auction.your_nickname} />
+
+<Box sx={{ backgroundColor:'#FAFAFA', minHeight:'100vh', py:3, px:{ xs:1, md:0 } }}>
+        <Grid container spacing={1}>
+          <Grid item xs={12} md={8} lg={8}>
+            <LeftCard />
+          </Grid>
+          <Grid item xs={12} md={4} lg={4}>
+            <RightCard />
+          </Grid>
+        </Grid>
+      </Box>
+
+      <Footer />
+
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={3000}
+        onClose={() => setToast({ ...toast, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert severity={toast.type} variant="filled" sx={{ width: '100%' }}>
+          {toast.msg}
+        </Alert>
+      </Snackbar>
+    </ThemeProvider>
+  );
+}
