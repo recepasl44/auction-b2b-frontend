@@ -32,6 +32,13 @@ export function UserProvider({ children }: UserProviderProps): React.JSX.Element
 
       if (error) {
         logger.error(error);
+
+        if (error === 'Geçersiz veya süresi dolmuş token') {
+          await authClient.signOut();
+          setState((prev) => ({ ...prev, user: null, error: null, isLoading: false }));
+          return;
+        }
+
         setState((prev) => ({ ...prev, user: null, error: 'Something went wrong', isLoading: false }));
         return;
       }

@@ -6,15 +6,21 @@ const axiosClient = axios.create({
 });
 
 axiosClient.interceptors.request.use((config) => {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('custom-auth-token') : null;
-
-   
     if (!config.headers) {
         config.headers = {};
     }
-  if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+
+    const isRefreshEndpoint = config.url?.includes('/auth/refresh');
+
+    if (typeof window !== 'undefined') {
+        const tokenKey = isRefreshEndpoint ? 'custom-refresh-token' : 'custom-auth-token';
+        const token = localStorage.getItem(tokenKey);
+
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
     }
+
     return config;
 });
 let isRefreshing = false;
