@@ -105,6 +105,19 @@ export default function ListProductionRequestsPage() {
       });
   };
 
+  const handleSuperReject = (id: number) => {
+    axiosClient
+      .put(`/productionRequests/${id}/superReject`)
+      .then(() => {
+        setRequests((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, status: 'rejected' } : r))
+        );
+      })
+      .catch((err) => {
+        console.error('Error super rejecting production request:', err);
+      });
+  };
+
   return (
     <Card>
       <CardHeader title="Production Requests" subheader="Browse and approve production requests" />
@@ -185,6 +198,14 @@ export default function ListProductionRequestsPage() {
                             onClick={() => handleStatusUpdate(pr.id, 'rejected')}
                           >
                             Reject
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            color="error"
+                            onClick={() => handleSuperReject(pr.id)}
+                          >
+                            Super Reject
                           </Button>
                         </Stack>
                       ) : (
