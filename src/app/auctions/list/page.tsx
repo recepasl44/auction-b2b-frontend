@@ -289,6 +289,10 @@ export default function ListAuctionsPage() {
                                                             Reject
                                                         </Button>
                                                     </Stack>
+                                                ) : item.invite_status === 'accepted' && dayjs(item.startTime).isBefore(dayjs()) ? (
+                                                    <Button variant="contained" size="small" onClick={() => router.push(`/auctions/${item.id}`)}>
+                                                        Join
+                                                    </Button>
                                                 ) : (
                                                     <Typography variant="body2">{item.invite_status ?? '-'}</Typography>
                                                 )}

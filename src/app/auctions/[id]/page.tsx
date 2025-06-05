@@ -7,7 +7,7 @@ import React, {
   useRef,
   SyntheticEvent,
 } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import io, { Socket } from 'socket.io-client';
 import axiosClient from '@/services/axiosClient';
 import { parseIsoAsLocal } from '@/lib/parseIsoAsLocal';
@@ -276,6 +276,7 @@ function Footer() {
 export default function AuctionPage() {
   const { id } = useParams() as { id: string };
   const auctionId = Number(id);
+  const router = useRouter();
 
   const socketRef = useRef<typeof Socket | null>(null);
 
@@ -293,6 +294,8 @@ export default function AuctionPage() {
   const lastAutoBid = useRef<number>(0);
   const [activeTab, setActiveTab] = useState(0);
   const [toast, setToast] = useState<{ open: boolean; msg: string; type: 'success' | 'error' }>({ open: false, msg: '', type: 'success' });
+  const [winnerOpen, setWinnerOpen] = useState(false);
+  const [winnerName, setWinnerName] = useState('');
    
 
   const fetchAuction = useCallback(async () => {
@@ -402,6 +405,25 @@ setIsActive(now >= start && now <= end);
     }
   }, [bids, autoBid, autoBidLimit, auction]);
 
+  // Handle auction end
+  useEffect(() => {
+    if (!auction) return;
+    const end = parseIsoAsLocal(auction.endTime);
+    const diff = end - Date.now();
+    if (diff <= 0) {
+      setIsActive(false);
+      setWinnerName(bids[0]?.nickname || 'No bids');
+      setWinnerOpen(true);
+      return;
+    }
+    const t = setTimeout(() => {
+      setIsActive(false);
+      setWinnerName(bids[0]?.nickname || 'No bids');
+      setWinnerOpen(true);
+    }, diff);
+    return () => clearTimeout(t);
+  }, [auction, bids]);
+
   //----------------------------------------------------------------
   // placeBid
   //----------------------------------------------------------------
@@ -488,6 +510,11 @@ setIsActive(now >= start && now <= end);
     : (step === 1
         ? [1, 5, 10, 20, 50].map((dec) => Math.max(currentPrice - dec, endLimit))
         : [1, 2, 3].map((mult) => Math.max(currentPrice - step * mult, endLimit)));
+
+  const handleWinnerClose = () => {
+    setWinnerOpen(false);
+    router.push('/dashboard');
+  };
 
   //----------------------------------------------------------------
   // Left Card
@@ -800,6 +827,15 @@ setIsActive(now >= start && now <= end);
         <Typography sx={{ mt: 8, textAlign: 'center' }}>
           İhale aktif değil.
         </Typography>
+        <Dialog open={winnerOpen} onClose={handleWinnerClose}>
+          <DialogTitle>Auction Ended</DialogTitle>
+          <DialogContent>
+            <Typography>The winner is {winnerName}</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleWinnerClose} variant="contained">OK</Button>
+          </DialogActions>
+        </Dialog>
       </ThemeProvider>
     );
   }

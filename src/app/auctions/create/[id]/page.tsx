@@ -16,6 +16,7 @@ import {
     MenuItem,
     Select,
     Typography,
+    Stack,
     Box,
     Dialog,
     DialogTitle,
@@ -153,8 +154,16 @@ const handleOpenSuppliers = () => {
                 <CardContent>
                     {productionInfo && (
                         <Box sx={{ mb: 2 }}>
-                            <Typography variant="subtitle1">Product: {productionInfo.name}</Typography>
-                            <Typography variant="body2">{productionInfo.description}</Typography>
+                            <Typography variant="h6" gutterBottom>
+                                Production Request Info
+                            </Typography>
+                            <Stack spacing={0.5}>
+                                {Object.entries(productionInfo).map(([k, v]) => (
+                                    <Typography key={k} variant="body2">
+                                        {k}: {String(v)}
+                                    </Typography>
+                                ))}
+                            </Stack>
                         </Box>
                     )}
                     <Grid container spacing={3}>
