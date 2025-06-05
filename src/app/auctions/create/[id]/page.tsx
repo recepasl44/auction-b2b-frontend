@@ -15,7 +15,8 @@ import {
     OutlinedInput,
     MenuItem,
     Select,
-      Typography,
+    Typography,
+    Box,
     Dialog,
     DialogTitle,
     DialogContent,
@@ -44,6 +45,8 @@ export default function AuctionCreatePage() {
     const [openSuppliers, setOpenSuppliers] = React.useState(false);
     const [incrementStep, setIncrementStep] = React.useState('');
     const [baseCurrency, setBaseCurrency] = React.useState('');
+    const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('asc');
+    const [productionInfo, setProductionInfo] = React.useState<any | null>(null);
     const [loading, setLoading] = React.useState(false);
     const [errorMessage, setErrorMessage] = React.useState('');
     const [successMessage, setSuccessMessage] = React.useState('');
@@ -73,6 +76,15 @@ const handleOpenSuppliers = () => {
     const pathname = window.location.pathname;
     const id = pathname.split('/').pop();
 
+    React.useEffect(() => {
+        const role = JSON.parse(localStorage.getItem('auth-data') || '{}').user?.role_id;
+        if (role === 1 && id) {
+            axiosClient.get(`/productionRequests/${id}`)
+                .then((res) => setProductionInfo(res.data?.productionRequest || null))
+                .catch(() => {});
+        }
+    }, [id]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -90,6 +102,7 @@ const handleOpenSuppliers = () => {
                 endPrice: endPrice ? parseFloat(endPrice) : undefined,
                 incrementStep: parseFloat(incrementStep),
                 baseCurrency,
+                sortDirection,
                 productionId: id,
                 supplierIds
             });
@@ -122,6 +135,7 @@ const handleOpenSuppliers = () => {
         setEndPrice('');
         setIncrementStep('');
         setBaseCurrency('');
+        setSortDirection('asc');
         setProductionId('');
         setSupplierIds([]);
         setErrorMessage('');
@@ -137,6 +151,12 @@ const handleOpenSuppliers = () => {
                 />
                 <Divider />
                 <CardContent>
+                    {productionInfo && (
+                        <Box sx={{ mb: 2 }}>
+                            <Typography variant="subtitle1">Product: {productionInfo.name}</Typography>
+                            <Typography variant="body2">{productionInfo.description}</Typography>
+                        </Box>
+                    )}
                     <Grid container spacing={3}>
                          
                         <Grid xs={12} md={6}>
@@ -243,6 +263,22 @@ const handleOpenSuppliers = () => {
                                 </Select>
                                 <FormHelperText>
                                     Currency used for this auction (USD, EUR, etc.).
+                                </FormHelperText>
+                            </FormControl>
+                        </Grid>
+                        <Grid xs={12} md={6}>
+                            <FormControl required fullWidth>
+                                <InputLabel>Sort Direction</InputLabel>
+                                <Select
+                                    label="Sort Direction"
+                                    value={sortDirection}
+                                    onChange={(e) => setSortDirection(e.target.value as 'asc' | 'desc')}
+                                >
+                                    <MenuItem value="asc">Ascending</MenuItem>
+                                    <MenuItem value="desc">Descending</MenuItem>
+                                </Select>
+                                <FormHelperText>
+                                    Choose whether the auction price increases or decreases
                                 </FormHelperText>
                             </FormControl>
                         </Grid>

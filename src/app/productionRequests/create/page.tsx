@@ -83,7 +83,6 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
   const [submitting, setSubmitting] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState('');
   const [productId, setProductId] = React.useState<number | null>(null);
-  const [imageFile, setImageFile] = React.useState<File | null>(null);
   const router = useRouter();
 
   const [form, setForm] = React.useState({
@@ -124,9 +123,6 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
       formData.append('priceType', form.priceType);
       formData.append('destinationPort', form.destinationPort);
       formData.append('orderQuantity', form.orderQuantity);
-      if (imageFile) {
-        formData.append('image', imageFile);
-      }
       const attributes: Record<string, string> = {};
       if (form.flourType) attributes['Flour Type'] = form.flourType;
       if (form.packageSize) attributes['Package Size'] = form.packageSize;
@@ -275,6 +271,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                 <InputLabel>Gluten</InputLabel>
                 <OutlinedInput
                   label="Gluten"
+                  placeholder="Enter the value you need"
                   value={form.gluten}
                   onChange={(e) => handleChange('gluten', e.target.value)}
                 />
@@ -286,6 +283,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                 <InputLabel>Protein</InputLabel>
                 <OutlinedInput
                   label="Protein"
+                  placeholder="Enter the value you need"
                   value={form.protein}
                   onChange={(e) => handleChange('protein', e.target.value)}
                 />
@@ -297,6 +295,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                 <InputLabel>Ash</InputLabel>
                 <OutlinedInput
                   label="Ash"
+                  placeholder="Enter the value you need"
                   value={form.ash}
                   onChange={(e) => handleChange('ash', e.target.value)}
                 />
@@ -308,6 +307,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                 <InputLabel>Moisture</InputLabel>
                 <OutlinedInput
                   label="Moisture"
+                  placeholder="Enter the value you need"
                   value={form.moisture}
                   onChange={(e) => handleChange('moisture', e.target.value)}
                 />
@@ -338,25 +338,6 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
             <Divider />
             <CardContent>
               <Grid container spacing={3}>
-                <Grid xs={12}>
-                  <Button variant="outlined" component="label">
-                    Upload Image
-                    <input
-                      type="file"
-                      hidden
-                      onChange={(e) => {
-                        const files = e.target.files;
-                        setImageFile(files && files.length > 0 ? files[0] : null);
-                        console.log('Selected file:', files);
-                      }}
-                    />
-                  </Button>
-                  {imageFile && (
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      {imageFile.name}
-                    </Typography>
-                  )}
-                </Grid>
                 <Grid xs={12} md={6}>
                   <FormControl fullWidth required>
                     <InputLabel>Category</InputLabel>
@@ -376,8 +357,9 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                      <Grid xs={12} md={6}>
                   <FormControl fullWidth required>
                     <InputLabel>name</InputLabel>
-                    <TextField
+                  <TextField
                       label="name"
+                      placeholder="Enter the value you need"
                       value={form.name}
                       onChange={(e) => handleChange('name', e.target.value)}
                       fullWidth
@@ -389,6 +371,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                     <InputLabel>Description</InputLabel>
                     <TextField
                       label="Description"
+                      placeholder="Enter the value you need"
                       value={form.description}
                       onChange={(e) => handleChange('description', e.target.value)}
                       fullWidth
@@ -415,6 +398,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                     <InputLabel>Destination Port</InputLabel>
                     <OutlinedInput
                       label="Destination Port"
+                      placeholder="Enter the value you need"
                       value={form.destinationPort}
                       onChange={(e) => handleChange('destinationPort', e.target.value)}
                     />
@@ -425,6 +409,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                     <InputLabel>Order Quantity</InputLabel>
                     <OutlinedInput
                       label="Order Quantity"
+                      placeholder="Enter the value you need"
                       type="number"
                       value={form.orderQuantity}
                       onChange={(e) => handleChange('orderQuantity', e.target.value)}
