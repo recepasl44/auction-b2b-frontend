@@ -43,6 +43,20 @@ to save more time and design efforts :)
 - Start the server: `npm run dev` or `yarn dev`
 - Open browser: `http://localhost:3000`
 
+## Refresh token example
+
+Use the refresh token returned from the login API when requesting a new access
+token:
+
+```bash
+curl --location 'localhost:3000/auth/refreshToken' \
+  --header 'Content-Type: application/json' \
+  --header 'Authorization: Bearer <access-token>' \
+  --data '{
+    "refreshToken": "<refresh-token-from-login>"
+}'
+```
+
 ## File Structure
 
 Within the download you'll find the following directories and files:

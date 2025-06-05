@@ -32,6 +32,7 @@ interface ProductionRequest {
   category?: string;
   destinationPort?: string;
   createdAt?: string;
+  status?: string;
 }
 
 export default function ListProductionRequestsPage() {
@@ -161,12 +162,16 @@ export default function ListProductionRequestsPage() {
                       {pr.createdAt ? new Date(pr.createdAt).toLocaleDateString() : '-'}
                     </TableCell>
                     <TableCell align="right">
-                          {JSON.parse(localStorage.getItem('auth-data') || '{}').user?.role_id === 1 && (
-                              <Button variant="contained" size="small" onClick={() => handleApprove(pr.id)}>
-                        Approve
-                      </Button>
-                          )}
-                   
+                      {JSON.parse(localStorage.getItem('auth-data') || '{}').user?.role_id === 1 && !pr.status && (
+                        <Stack direction="row" spacing={1}>
+                          <Button variant="contained" size="small" onClick={() => handleApprove(pr.id)}>
+                            Approve
+                          </Button>
+                          <Button variant="outlined" size="small" color="error">
+                            Reject
+                          </Button>
+                        </Stack>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

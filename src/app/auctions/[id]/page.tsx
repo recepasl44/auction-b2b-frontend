@@ -11,6 +11,9 @@ import { useParams } from 'next/navigation';
 import io, { Socket } from 'socket.io-client';
 import axiosClient from '@/services/axiosClient';
 import { parseIsoAsLocal } from '@/lib/parseIsoAsLocal';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime);
 
 import {
   Box,
@@ -35,6 +38,10 @@ import {
   Chip,
   Avatar,
   Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 
 
@@ -280,6 +287,8 @@ export default function AuctionPage() {
   const [highlightIndex, setHighlightIndex] = useState<number | null>(null);
   const [isActive, setIsActive] = useState<boolean>(true);
   const [autoBid, setAutoBid] = useState(false);
+  const [autoBidLimit, setAutoBidLimit] = useState<number | null>(null);
+  const [openAutoBid, setOpenAutoBid] = useState(false);
   const lastAutoBid = useRef<number>(0);
   const [activeTab, setActiveTab] = useState(0);
   const [toast, setToast] = useState<{ open: boolean; msg: string; type: 'success' | 'error' }>({ open: false, msg: '', type: 'success' });
@@ -299,14 +308,16 @@ export default function AuctionPage() {
       }
       try {
         const bidResp = await axiosClient.get<BidResponse>(`/auctions/placeBid/${auctionId}`);
-        const arr: Bid[] = (bidResp.data.auction || []).map((b) => ({
-          auctionId,
-          nickname: b.nickname,
-          amount: parseFloat(String(b.price).replace(/[^0-9.]/g, '')),
-          timestamp: b.date,
-          price: b.price,
-          date: b.date,
-        }));
+        const arr: Bid[] = (bidResp.data.auction || [])
+          .map((b) => ({
+            auctionId,
+            nickname: b.nickname,
+            amount: parseFloat(String(b.price).replace(/[^0-9.]/g, '')),
+            timestamp: b.date,
+            price: b.price,
+            date: b.date,
+          }))
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
         setBids(arr);
         if (arr.length > 0) {
           const last = arr[arr.length - 1];
@@ -352,8 +363,8 @@ setIsActive(now >= start && now <= end);
     socket.on('bidUpdated', (payload: Bid) => {
       if (payload.auctionId !== auctionId) return;
       setBids((prev) => {
-        const arr = [...prev, payload];
-        setHighlightIndex(arr.length - 1);
+        const arr = [payload, ...prev];
+        setHighlightIndex(0);
         setTimeout(() => setHighlightIndex(null), 1000);
         return arr;
       });
@@ -369,19 +380,19 @@ setIsActive(now >= start && now <= end);
   // Auto‑bid
   //----------------------------------------------------------------
   useEffect(() => {
-    if (!autoBid || !auction) return;
-    const last = bids[bids.length - 1];
+    if (!autoBid || !auction || autoBidLimit === null) return;
+    const last = bids[0];
     if (!last || last.nickname === auction.your_nickname) return;
 
     const step = parseFloat(auction.incrementStep || '1');
-    const max = parseFloat(auction.endPrice || 'Infinity');
+    const max = Math.min(parseFloat(auction.endPrice || 'Infinity'), autoBidLimit);
     const next = last.amount + step;
 
     if (next > max || next <= lastAutoBid.current) return;
 
     lastAutoBid.current = next;
     placeBid(next);
-  }, [bids, autoBid, auction]);
+  }, [bids, autoBid, autoBidLimit, auction]);
 
   //----------------------------------------------------------------
   // placeBid
@@ -427,7 +438,10 @@ setIsActive(now >= start && now <= end);
 
   const step = parseFloat(auction?.incrementStep || '1');
   const endLimit = parseFloat(auction?.endPrice || 'Infinity');
-  const nextPrices = [1, 2, 3].map((mult) => Math.min(currentPrice + step * mult, endLimit));
+  const nextPrices =
+    step === 1
+      ? [1, 5, 10, 20, 50].map((inc) => Math.min(currentPrice + inc, endLimit))
+      : [1, 2, 3].map((mult) => Math.min(currentPrice + step * mult, endLimit));
 
   //----------------------------------------------------------------
   // Left Card
@@ -611,10 +625,42 @@ setIsActive(now >= start && now <= end);
         color={autoBid ? 'error' : 'inherit'}
         fullWidth
         sx={{ borderColor: autoBid ? 'error.main' : '#B00020', color: autoBid ? 'error.main' : '#B00020', mb: 2, fontWeight: 600 }}
-        onClick={() => setAutoBid((prev) => !prev)}
+        onClick={() => {
+          if (autoBid) {
+            setAutoBid(false);
+          } else {
+            setOpenAutoBid(true);
+          }
+        }}
       >
         {autoBid ? 'Otomatik Teklifi Durdur' : 'Otomatik Teklif Moduna Geç'}
       </Button>
+
+      <Dialog open={openAutoBid} onClose={() => setOpenAutoBid(false)}>
+        <DialogTitle>Otomatik Teklif Limiti</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Max Bid"
+            type="number"
+            fullWidth
+            onChange={(e) => setAutoBidLimit(parseFloat(e.target.value))}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenAutoBid(false)}>Cancel</Button>
+          <Button
+            onClick={() => {
+              setOpenAutoBid(false);
+              setAutoBid(true);
+            }}
+            variant="contained"
+          >
+            Start
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Bid history */}
       <Typography variant="h2" sx={{ mb: 1 }}>
@@ -653,10 +699,7 @@ setIsActive(now >= start && now <= end);
               </Typography>
             </Stack>
             <Typography variant="caption" color="text.secondary">
-              {new Date(b.date || b.timestamp).toLocaleTimeString('tr-TR', {
-                minute: '2-digit',
-                second: '2-digit',
-              })}
+              {dayjs(b.date || b.timestamp).fromNow()}
             </Typography>
           </Stack>
         ))}
