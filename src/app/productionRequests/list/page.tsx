@@ -24,7 +24,6 @@ import {
 } from '@mui/material';
 import { MagnifyingGlass as MagnifyingGlassIcon } from '@phosphor-icons/react';
 import axiosClient from '@/services/axiosClient';
-import { useRouter } from 'next/navigation';
 
 interface ProductionRequest {
   id: number;
@@ -36,7 +35,6 @@ interface ProductionRequest {
 }
 
 export default function ListProductionRequestsPage() {
-  const router = useRouter();
   const [requests, setRequests] = React.useState<ProductionRequest[]>([]);
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
@@ -94,8 +92,17 @@ export default function ListProductionRequestsPage() {
     setPage(0);
   };
 
-  const handleApprove = (id: number) => {
-    router.push(`/auctions/create/${id}`);
+  const handleStatusUpdate = (id: number, status: 'accepted' | 'rejected') => {
+    axiosClient
+      .put(`/productionRequests/${id}`, { status })
+      .then(() => {
+        setRequests((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, status } : r))
+        );
+      })
+      .catch((err) => {
+        console.error('Error updating production request status:', err);
+      });
   };
 
   return (
@@ -162,12 +169,21 @@ export default function ListProductionRequestsPage() {
                       {pr.createdAt ? new Date(pr.createdAt).toLocaleDateString() : '-'}
                     </TableCell>
                     <TableCell align="right">
-                      {JSON.parse(localStorage.getItem('auth-data') || '{}').user?.role_id === 1 && !pr.status ? (
+                      {JSON.parse(localStorage.getItem('auth-data') || '{}').user?.role_id === 1 && pr.status === 'pending' ? (
                         <Stack direction="row" spacing={1}>
-                          <Button variant="contained" size="small" onClick={() => handleApprove(pr.id)}>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => handleStatusUpdate(pr.id, 'accepted')}
+                          >
                             Accept
                           </Button>
-                          <Button variant="outlined" size="small" color="error">
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            color="error"
+                            onClick={() => handleStatusUpdate(pr.id, 'rejected')}
+                          >
                             Reject
                           </Button>
                         </Stack>
