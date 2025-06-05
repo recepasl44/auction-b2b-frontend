@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-    baseURL: process.env.REACT_APP_API_URL || 'https://backendauction.recepaslan.com.tr',
+    baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3000',
     headers: { 'Content-Type': 'application/json' }
 });
 
@@ -10,7 +10,7 @@ axiosClient.interceptors.request.use((config) => {
         config.headers = {};
     }
 
-    const isRefreshEndpoint = config.url?.includes('/auth/refresh');
+    const isRefreshEndpoint = config.url?.includes('/auth/refreshToken');
 
     if (typeof window !== 'undefined') {
         const tokenKey = isRefreshEndpoint ? 'custom-refresh-token' : 'custom-auth-token';
@@ -48,7 +48,9 @@ axiosClient.interceptors.response.use(
             originalRequest._retry = true;
             isRefreshing = true;
             try {
-                const resp = await axiosClient.post<{ token: string }>('/auth/refresh');
+                const resp = await axiosClient.post<{ token: string }>('/auth/refreshToken', {
+                    refreshToken: localStorage.getItem('custom-refresh-token')
+                });
                 const newToken = resp.data?.token;
                 if (newToken) {
                     if (typeof window !== 'undefined') {
