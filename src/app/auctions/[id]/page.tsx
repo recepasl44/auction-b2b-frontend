@@ -187,7 +187,7 @@ function Countdown3D({ timeText }: { timeText: string }) {
 // SimpleCountdown – pulse & sticky davranış
 //------------------------------------------------------------------
 function SimpleCountdown({ endTime }: { endTime: string }) {
-  const [time, setTime] = useState('00:00');
+  const [time, setTime] = useState('');
   const [pulse, setPulse] = useState(false);
 
   useEffect(() => {
@@ -196,11 +196,11 @@ function SimpleCountdown({ endTime }: { endTime: string }) {
 
     const tick = () => {
       const diff = Math.max(target - Date.now(), 0);
-      const mins = Math.floor(diff / 60000);
+      const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+      const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+      const mins = Math.floor((diff % (60 * 60 * 1000)) / 60000);
       const secs = Math.floor((diff % 60000) / 1000);
-      const mm = String(mins).padStart(2, '0');
-      const ss = String(secs).padStart(2, '0');
-      setTime(`${mm}:${ss}`);
+      setTime(`${days} gün ${hours} saat ${mins} dakika ${secs} saniye kaldı`);
       setPulse(diff <= 10_000); // <10 sn ise pulse
     };
 
@@ -288,6 +288,7 @@ export default function AuctionPage() {
   const [isActive, setIsActive] = useState<boolean>(true);
   const [autoBid, setAutoBid] = useState(false);
   const [autoBidLimit, setAutoBidLimit] = useState<number | null>(null);
+  const [autoBidInput, setAutoBidInput] = useState('');
   const [openAutoBid, setOpenAutoBid] = useState(false);
   const lastAutoBid = useRef<number>(0);
   const [activeTab, setActiveTab] = useState(0);
@@ -385,13 +386,20 @@ setIsActive(now >= start && now <= end);
     if (!last || last.nickname === auction.your_nickname) return;
 
     const step = parseFloat(auction.incrementStep || '1');
-    const max = Math.min(parseFloat(auction.endPrice || 'Infinity'), autoBidLimit);
-    const next = last.amount + step;
-
-    if (next > max || next <= lastAutoBid.current) return;
-
-    lastAutoBid.current = next;
-    placeBid(next);
+    const dir = auction.sortDirection || 'asc';
+    if (dir === 'asc') {
+      const max = Math.min(parseFloat(auction.endPrice || 'Infinity'), autoBidLimit);
+      const next = last.amount + step;
+      if (next > max || next <= lastAutoBid.current) return;
+      lastAutoBid.current = next;
+      placeBid(next);
+    } else {
+      const min = Math.max(parseFloat(auction.endPrice || '-Infinity'), autoBidLimit);
+      const next = last.amount - step;
+      if (next < min || next >= lastAutoBid.current) return;
+      lastAutoBid.current = next;
+      placeBid(next);
+    }
   }, [bids, autoBid, autoBidLimit, auction]);
 
   //----------------------------------------------------------------
@@ -403,18 +411,34 @@ setIsActive(now >= start && now <= end);
     const start = parseFloat(auction.startPrice || '0');
     const end = parseFloat(auction.endPrice || 'Infinity');
     const step = parseFloat(auction.incrementStep || '1');
+    const dir = auction.sortDirection || 'asc';
 
-    if (amount < start || amount > end) {
-      setToast({ open: true, msg: 'Teklif aralık dışında', type: 'error' });
-      return;
-    }
-    if (amount <= currentPrice) {
-      setToast({ open: true, msg: 'Daha yüksek teklif verin', type: 'error' });
-      return;
-    }
-    if ((amount - start) % step !== 0 || amount - currentPrice < step) {
-      setToast({ open: true, msg: `Minimum artış ${step}`, type: 'error' });
-      return;
+    if (dir === 'asc') {
+      if (amount < start || amount > end) {
+        setToast({ open: true, msg: 'Teklif aralık dışında', type: 'error' });
+        return;
+      }
+      if (amount <= currentPrice) {
+        setToast({ open: true, msg: 'Daha yüksek teklif verin', type: 'error' });
+        return;
+      }
+      if ((amount - start) % step !== 0 || amount - currentPrice < step) {
+        setToast({ open: true, msg: `Minimum artış ${step}`, type: 'error' });
+        return;
+      }
+    } else {
+      if (amount > start || amount < end) {
+        setToast({ open: true, msg: 'Teklif aralık dışında', type: 'error' });
+        return;
+      }
+      if (amount >= currentPrice) {
+        setToast({ open: true, msg: 'Daha düşük teklif verin', type: 'error' });
+        return;
+      }
+      if ((start - amount) % step !== 0 || currentPrice - amount < step) {
+        setToast({ open: true, msg: `Minimum azalış ${step}`, type: 'error' });
+        return;
+      }
     }
 
     try {
@@ -456,10 +480,14 @@ setIsActive(now >= start && now <= end);
 
   const step = parseFloat(auction?.incrementStep || '1');
   const endLimit = parseFloat(auction?.endPrice || 'Infinity');
-  const nextPrices =
-    step === 1
-      ? [1, 5, 10, 20, 50].map((inc) => Math.min(currentPrice + inc, endLimit))
-      : [1, 2, 3].map((mult) => Math.min(currentPrice + step * mult, endLimit));
+  const dir = auction?.sortDirection || 'asc';
+  const nextPrices = dir === 'asc'
+    ? (step === 1
+        ? [1, 5, 10, 20, 50].map((inc) => Math.min(currentPrice + inc, endLimit))
+        : [1, 2, 3].map((mult) => Math.min(currentPrice + step * mult, endLimit)))
+    : (step === 1
+        ? [1, 5, 10, 20, 50].map((dec) => Math.max(currentPrice - dec, endLimit))
+        : [1, 2, 3].map((mult) => Math.max(currentPrice - step * mult, endLimit)));
 
   //----------------------------------------------------------------
   // Left Card
@@ -605,7 +633,9 @@ setIsActive(now >= start && now <= end);
         {nextPrices.map((p, idx) => (
           <Chip
             key={idx}
-            label={`+${(p - currentPrice).toLocaleString()}`}
+            label={dir === 'asc'
+              ? `+${(p - currentPrice).toLocaleString()}`
+              : `-${(currentPrice - p).toLocaleString()}`}
             color="primary"
             clickable
             onClick={() => placeBid(p)}
@@ -671,15 +701,19 @@ setIsActive(now >= start && now <= end);
             label="Max Bid"
             type="number"
             fullWidth
-            onChange={(e) => setAutoBidLimit(parseFloat(e.target.value))}
+            value={autoBidInput}
+            onChange={(e) => setAutoBidInput(e.target.value)}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenAutoBid(false)}>Cancel</Button>
+          <Button onClick={() => { setOpenAutoBid(false); setAutoBidInput(''); }}>Cancel</Button>
           <Button
             onClick={() => {
               setOpenAutoBid(false);
+              const val = parseFloat(autoBidInput);
+              if (!isNaN(val)) setAutoBidLimit(val);
               setAutoBid(true);
+              setAutoBidInput('');
             }}
             variant="contained"
           >
