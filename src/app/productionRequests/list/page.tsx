@@ -162,15 +162,17 @@ export default function ListProductionRequestsPage() {
                       {pr.createdAt ? new Date(pr.createdAt).toLocaleDateString() : '-'}
                     </TableCell>
                     <TableCell align="right">
-                      {JSON.parse(localStorage.getItem('auth-data') || '{}').user?.role_id === 1 && !pr.status && (
+                      {JSON.parse(localStorage.getItem('auth-data') || '{}').user?.role_id === 1 && !pr.status ? (
                         <Stack direction="row" spacing={1}>
                           <Button variant="contained" size="small" onClick={() => handleApprove(pr.id)}>
-                            Approve
+                            Accept
                           </Button>
                           <Button variant="outlined" size="small" color="error">
                             Reject
                           </Button>
                         </Stack>
+                      ) : (
+                        <Typography variant="body2">{pr.status ?? '-'}</Typography>
                       )}
                     </TableCell>
                   </TableRow>
