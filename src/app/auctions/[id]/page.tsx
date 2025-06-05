@@ -424,6 +424,24 @@ setIsActive(now >= start && now <= end);
         userId: JSON.parse(localStorage.getItem('auth-data') || '{}').user?.id,
         userCurrency: auction.baseCurrency,
       });
+      const nickname = auction.your_nickname ||
+        JSON.parse(localStorage.getItem('auth-data') || '{}').user?.nickname ||
+        'You';
+      const newBid: Bid = {
+        auctionId,
+        nickname,
+        amount,
+        timestamp: new Date().toISOString(),
+        price: `${amount.toLocaleString()} ${auction.baseCurrency}`,
+        date: new Date().toISOString(),
+      };
+      setBids((prev) => {
+        const arr = [newBid, ...prev];
+        setHighlightIndex(0);
+        setTimeout(() => setHighlightIndex(null), 1000);
+        return arr;
+      });
+      setCurrentPrice(amount);
       setToast({ open: true, msg: 'Teklif gönderildi', type: 'success' });
     } catch (err) {
       console.error(err);
@@ -468,33 +486,6 @@ setIsActive(now >= start && now <= end);
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           {auction.location}
         </Typography>
-      )}
-
-      {/* Görsel */}
-      {auction?.product?.images?.[0] ? (
-        <Box
-          component="img"
-          src={auction.product.images[0]}
-          sx={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', borderRadius: 2, mb: 2 }}
-          alt="Ürün görseli"
-        />
-      ) : (
-        <Box
-          sx={{
-            width: '100%',
-            aspectRatio: '3 / 2',
-            background: 'linear-gradient(135deg, #f2f2f2 0%, #e6e6e6 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: 2,
-            mb: 2,
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
-            Fotoğraf bulunamadı
-          </Typography>
-        </Box>
       )}
 
       {/* Tabs */}
@@ -545,6 +536,33 @@ setIsActive(now >= start && now <= end);
           <Typography variant="body2">Destination Port: {auction?.product?.destinationPort}</Typography>
           <Typography variant="body2">Order Quantity: {auction?.product?.orderQuantity}</Typography>
         </Stack>
+      )}
+
+      {/* Görsel */}
+      {auction?.product?.images?.[0] ? (
+        <Box
+          component="img"
+          src={auction.product.images[0]}
+          sx={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', borderRadius: 2, mt: 2 }}
+          alt="Ürün görseli"
+        />
+      ) : (
+        <Box
+          sx={{
+            width: '100%',
+            aspectRatio: '4 / 3',
+            background: 'linear-gradient(135deg, #f2f2f2 0%, #e6e6e6 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 2,
+            mt: 2,
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            Fotoğraf bulunamadı
+          </Typography>
+        </Box>
       )}
     </Card>
   );
@@ -636,7 +654,15 @@ setIsActive(now >= start && now <= end);
         {autoBid ? 'Otomatik Teklifi Durdur' : 'Otomatik Teklif Moduna Geç'}
       </Button>
 
-      <Dialog open={openAutoBid} onClose={() => setOpenAutoBid(false)}>
+      <Dialog
+        open={openAutoBid}
+        disableEscapeKeyDown
+        onClose={(_event, reason) => {
+          if (reason !== 'backdropClick') {
+            setOpenAutoBid(false);
+          }
+        }}
+      >
         <DialogTitle>Otomatik Teklif Limiti</DialogTitle>
         <DialogContent>
           <TextField
