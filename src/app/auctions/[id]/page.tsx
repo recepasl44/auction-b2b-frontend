@@ -352,7 +352,7 @@ setIsActive(now >= start && now <= end);
   //----------------------------------------------------------------
   useEffect(() => {
     if (!auction) return;
-    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://backendauction.recepaslan.com.tr';
+    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
     const socket = io(SOCKET_URL, { path: '/socket.io' });
     socketRef.current = socket as unknown as typeof Socket;
 
@@ -714,7 +714,7 @@ setIsActive(now >= start && now <= end);
             }}
           >
             <Avatar sx={{ width: 32, height: 32, bgcolor: '#1A1D23', fontSize: 12 }}>
-              {b.nickname.charAt(0).toUpperCase()}
+              {b.nickname?.charAt(0).toUpperCase()}
             </Avatar>
             <Stack spacing={0.5} sx={{ flexGrow: 1 }}>
               <Typography variant="body2" fontWeight={600}>
