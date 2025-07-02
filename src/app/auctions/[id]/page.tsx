@@ -294,7 +294,8 @@ export default function AuctionPage() {
   const [openAutoBid, setOpenAutoBid] = useState(false);
   const lastAutoBid = useRef<number>(0);
   const [activeTab, setActiveTab] = useState(0);
-  const [toast, setToast] = useState<{ open: boolean; msg: string; type: 'success' | 'error' }>({ open: false, msg: '', type: 'success' });
+  const [toast, setToast] = useState<{ open: boolean; msg: string; type: 'success' | 'error' | 'warning' }>({ open: false, msg: '', type: 'success' });
+  const warningShown = useRef(false);
   const [winnerOpen, setWinnerOpen] = useState(false);
   const [winnerName, setWinnerName] = useState('');
    
@@ -424,6 +425,23 @@ setIsActive(now >= start && now <= end);
     }, diff);
     return () => clearTimeout(t);
   }, [auction, bids]);
+
+  // Warn when 15 minutes remain
+  useEffect(() => {
+    if (!auction || warningShown.current) return;
+    const end = parseIsoAsLocal(auction.endTime);
+    const warnDiff = end - Date.now() - 15 * 60 * 1000;
+    if (warnDiff <= 0) {
+      setToast({ open: true, msg: 'Ihalenin bitmesine 15 dakika kaldi', type: 'warning' });
+      warningShown.current = true;
+      return;
+    }
+    const t = setTimeout(() => {
+      setToast({ open: true, msg: 'Ihalenin bitmesine 15 dakika kaldi', type: 'warning' });
+      warningShown.current = true;
+    }, warnDiff);
+    return () => clearTimeout(t);
+  }, [auction]);
 
   //----------------------------------------------------------------
   // placeBid
