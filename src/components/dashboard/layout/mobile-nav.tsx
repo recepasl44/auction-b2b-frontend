@@ -118,7 +118,7 @@ export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element 
           <Box
             component="img"
             alt="Pro version"
-            src="/assets/devias-kit-pro.png"
+            src="/assets/image.png"
             sx={{ height: 'auto', width: '160px' }}
           />
         </Box>

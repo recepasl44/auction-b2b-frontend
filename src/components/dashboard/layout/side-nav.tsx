@@ -110,7 +110,7 @@ export function SideNav(): React.JSX.Element {
           <Box
             component="img"
             alt=""
-            src="/assets/devias-kit-pro.png"
+            src="/assets/image.png"
             sx={{ height: 'auto', width: '160px' }}
           />
         </Box>
