@@ -107,7 +107,7 @@ export default function ListProductionRequestsPage() {
 
   const handleSuperReject = (id: number) => {
     axiosClient
-      .put(`/productionRequests/${id}/superReject`)
+      .put(`/productionRequests/${id}/reject`)
       .then(() => {
         setRequests((prev) =>
           prev.map((r) => (r.id === id ? { ...r, status: 'rejected' } : r))

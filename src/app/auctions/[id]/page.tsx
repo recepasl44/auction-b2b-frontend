@@ -49,6 +49,7 @@ import {
 // Types
 //------------------------------------------------------------------
 interface Auction {
+  sortDirection: string;
   id: number;
   description: string;
   title: string;
@@ -200,7 +201,7 @@ function SimpleCountdown({ endTime }: { endTime: string }) {
       const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
       const mins = Math.floor((diff % (60 * 60 * 1000)) / 60000);
       const secs = Math.floor((diff % 60000) / 1000);
-      setTime(`${days} gün ${hours} saat ${mins} dakika ${secs} saniye kaldı`);
+      setTime(` ${mins} : ${secs} `);
       setPulse(diff <= 10_000); // <10 sn ise pulse
     };
 
@@ -223,7 +224,7 @@ function SimpleCountdown({ endTime }: { endTime: string }) {
         animation: pulse ? 'pulse 0.2s ease-in-out infinite' : 'none',
       }}
     >
-      <Typography variant="body1" fontWeight={700}>
+      <Typography variant="body1" fontWeight={900} sx={{ fontSize: 30 }}>
         {time}
       </Typography>
     </Box>
@@ -356,7 +357,7 @@ setIsActive(now >= start && now <= end);
   //----------------------------------------------------------------
   useEffect(() => {
     if (!auction) return;
-    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
+    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://backendauction.recepaslan.com.tr';
     const socket = io(SOCKET_URL, { path: '/socket.io' });
     socketRef.current = socket as unknown as typeof Socket;
 
