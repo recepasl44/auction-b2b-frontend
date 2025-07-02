@@ -24,6 +24,7 @@ import {
 } from '@mui/material';
 import { MagnifyingGlass as MagnifyingGlassIcon } from '@phosphor-icons/react';
 import axiosClient from '@/services/axiosClient';
+import { useRouter } from 'next/navigation';
 
 interface ProductionRequest {
   id: number;
@@ -35,6 +36,7 @@ interface ProductionRequest {
 }
 
 export default function ListProductionRequestsPage() {
+  const router = useRouter();
   const [requests, setRequests] = React.useState<ProductionRequest[]>([]);
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
@@ -93,6 +95,10 @@ export default function ListProductionRequestsPage() {
   };
 
   const handleStatusUpdate = (id: number, status: 'accepted' | 'rejected') => {
+    if (status === 'accepted') {
+      router.push(`/auctions/create/${id}`);
+      return;
+    }
     axiosClient
       .put(`/productionRequests/${id}`, { status })
       .then(() => {

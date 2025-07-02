@@ -166,21 +166,21 @@ export default function ListAuctionsPage() {
                 setPrLoading(false);
             });
     };
- const handleInviteAction = (auctionId: number, status: 'accepted' | 'rejected') => {
-        if (!userId) return;
+ const handleInviteAction = (inviteId: number, action: 'accepted' | 'declined') => {
         axiosClient
-            .put('/inviteStatus', {
-                user_id: userId,
-                auction_id: auctionId,
-                invite_status: status,
+            .post('/auctions/respondInvite', {
+                inviteId,
+                action,
             })
             .then(() => {
                 setAuctions((prev) =>
-                    prev.map((a) => (a.id === auctionId ? { ...a, invite_status: status } : a))
+                    prev.map((a) =>
+                        a.id === inviteId ? { ...a, invite_status: action } : a
+                    )
                 );
             })
             .catch((err) => {
-                console.error('Error updating invite status:', err);
+                console.error('Error responding to invite:', err);
             });
     };
 
@@ -284,7 +284,7 @@ export default function ListAuctionsPage() {
                                                             variant="outlined"
                                                             color="error"
                                                             size="small"
-                                                            onClick={() => handleInviteAction(item.id, 'rejected')}
+                                                            onClick={() => handleInviteAction(item.id, 'declined')}
                                                         >
                                                             Reject
                                                         </Button>
