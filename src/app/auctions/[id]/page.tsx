@@ -358,7 +358,7 @@ setIsActive(now >= start && now <= end);
   //----------------------------------------------------------------
   useEffect(() => {
     if (!auction) return;
-    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://backendauction.recepaslan.com.tr';
+    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://api.demaxtore.com';
     const socket = io(SOCKET_URL, { path: '/socket.io' });
     socketRef.current = socket as unknown as typeof Socket;
 
