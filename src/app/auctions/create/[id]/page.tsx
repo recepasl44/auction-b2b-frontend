@@ -81,7 +81,7 @@ const handleOpenSuppliers = () => {
         const role = JSON.parse(localStorage.getItem('auth-data') || '{}').user?.role_id;
         if (role === 1 && id) {
             axiosClient.get(`/productionRequests/${id}`)
-                .then((res) => setProductionInfo(res.data?.productionRequest || null))
+                .then((res) => setProductionInfo((res.data as { productionRequest?: any })?.productionRequest || null))
                 .catch(() => {});
         }
     }, [id]);
