@@ -174,8 +174,9 @@ const handleOpenSuppliers = () => {
                          
                         <Grid xs={12} md={6}>
                             <FormControl required fullWidth>
-                                <InputLabel>Title</InputLabel>
+                                <InputLabel shrink htmlFor="auction-title">Title</InputLabel>
                                 <OutlinedInput
+                                    id="auction-title"
                                     label="Title"
                                     placeholder="Example: Elma İhalesi"
                                     value={title}
@@ -188,8 +189,9 @@ const handleOpenSuppliers = () => {
                         </Grid>
                         <Grid xs={12} md={6}>
                             <FormControl required fullWidth>
-                                <InputLabel>Start Time</InputLabel>
+                                <InputLabel shrink htmlFor="auction-start-time">Start Time</InputLabel>
                                 <OutlinedInput
+                                    id="auction-start-time"
                                     label="Start Time"
                                     type="datetime-local"
                                     placeholder="YYYY-MM-DD HH:mm"
@@ -203,8 +205,9 @@ const handleOpenSuppliers = () => {
                         </Grid>
                         <Grid xs={12} md={6}>
                             <FormControl required fullWidth>
-                                <InputLabel>End Time</InputLabel>
+                                <InputLabel shrink htmlFor="auction-end-time">End Time</InputLabel>
                                 <OutlinedInput
+                                    id="auction-end-time"
                                     label="End Time"
                                     type="datetime-local"
                                     value={endTime}
@@ -217,8 +220,9 @@ const handleOpenSuppliers = () => {
                         </Grid>
                         <Grid xs={12} md={6}>
                             <FormControl required fullWidth>
-                                <InputLabel>Start Price</InputLabel>
+                                <InputLabel shrink htmlFor="auction-start-price">Start Price</InputLabel>
                                 <OutlinedInput
+                                    id="auction-start-price"
                                     label="Start Price"
                                     type="number"
                                     placeholder="e.g. 100"
@@ -232,8 +236,9 @@ const handleOpenSuppliers = () => {
                         </Grid>
                         <Grid xs={12} md={6}>
                             <FormControl fullWidth>
-                                <InputLabel>End Price</InputLabel>
+                                <InputLabel shrink htmlFor="auction-end-price">End Price</InputLabel>
                                 <OutlinedInput
+                                    id="auction-end-price"
                                     label="End Price"
                                     type="number"
                                     placeholder="e.g. 200"
@@ -247,8 +252,9 @@ const handleOpenSuppliers = () => {
                         </Grid>
                         <Grid xs={12} md={6}>
                             <FormControl required fullWidth>
-                                <InputLabel>Increment Step</InputLabel>
+                                <InputLabel shrink htmlFor="auction-increment-step">Increment Step</InputLabel>
                                 <OutlinedInput
+                                    id="auction-increment-step"
                                     label="Increment Step"
                                     type="number"
                                     placeholder="e.g. 10"
