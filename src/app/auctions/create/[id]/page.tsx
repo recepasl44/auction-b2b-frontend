@@ -25,7 +25,9 @@ import {
     Checkbox,
     List,
     ListItem,
-    ListItemText
+    ListItemText,
+    Snackbar,
+    Alert
 } from '@mui/material';
 import axiosClient from '@/services/axiosClient';
 const currencyOptions = ['USD', 'EUR', 'TRY', 'GBP'];
@@ -51,6 +53,7 @@ export default function AuctionCreatePage() {
     const [loading, setLoading] = React.useState(false);
     const [errorMessage, setErrorMessage] = React.useState('');
     const [successMessage, setSuccessMessage] = React.useState('');
+    const [toastOpen, setToastOpen] = React.useState(false);
 const handleOpenSuppliers = () => {
         setOpenSuppliers(true);
         if (suppliers.length === 0) {
@@ -110,6 +113,7 @@ const handleOpenSuppliers = () => {
 
             console.log('Auction created:', response.data);
             setSuccessMessage('Auction created successfully!');
+            setToastOpen(true);
             // Reset form
             setTitle('');
             setStartTime('');
@@ -342,6 +346,21 @@ const handleOpenSuppliers = () => {
                     <Button onClick={handleCloseSuppliers}>Close</Button>
                 </DialogActions>
             </Dialog>
+            <Snackbar
+                open={toastOpen}
+                autoHideDuration={3000}
+                onClose={() => setToastOpen(false)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert
+                    onClose={() => setToastOpen(false)}
+                    severity="success"
+                    variant="filled"
+                    sx={{ width: '100%' }}
+                >
+                    {successMessage}
+                </Alert>
+            </Snackbar>
         </form>
     );
 }

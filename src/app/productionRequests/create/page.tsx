@@ -103,6 +103,15 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
     orderQuantity: '',
   });
 
+  const formatLabel = (label: string) =>
+    label.charAt(0).toUpperCase() + label.slice(1);
+
+  const formatValue = (key: string, value: string) => {
+    if (key === 'gluten') return `${value}%`;
+    if (key === 'protein') return `${value} g`;
+    return value;
+  };
+
   const handleChange = (field: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -287,7 +296,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                   value={form.protein}
                   onChange={(e) => handleChange('protein', e.target.value)}
                 />
-                <FormHelperText>% value</FormHelperText>
+                <FormHelperText>g value</FormHelperText>
               </FormControl>
             </Grid>
             <Grid xs={12} md={6}>
@@ -437,7 +446,12 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
             <CardContent>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {Object.entries(form).map(([key, value]) =>
-                  value ? <Typography key={key}>{`${key}: ${value}`}</Typography> : null
+                  value ? (
+                    <Typography key={key}>{`${formatLabel(key)}: ${formatValue(
+                      key,
+                      value as string
+                    )}`}</Typography>
+                  ) : null
                 )}
                 {errorMessage && <Typography color="error">{errorMessage}</Typography>}
               </Box>
