@@ -15,7 +15,9 @@ import {
     OutlinedInput,
     Select,
     MenuItem,
-    Typography
+    Typography,
+    Snackbar,
+    Alert
 } from '@mui/material';
 import axiosClient from '@/services/axiosClient';
 
@@ -32,6 +34,7 @@ export default function CreateShipmentPage() {
     const [loading, setLoading] = React.useState(false);
     const [errorMessage, setErrorMessage] = React.useState('');
     const [successMessage, setSuccessMessage] = React.useState('');
+    const [toastOpen, setToastOpen] = React.useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,6 +56,7 @@ export default function CreateShipmentPage() {
 
             console.log('Shipment created:', resp.data);
             setSuccessMessage('Shipment created successfully!');
+            setToastOpen(true);
             setOrderId('');
             setShipmentType('sea');
             setContainerNo('');
@@ -186,6 +190,16 @@ export default function CreateShipmentPage() {
                     </Button>
                 </CardActions>
             </Card>
+            <Snackbar
+                open={toastOpen}
+                autoHideDuration={3000}
+                onClose={() => setToastOpen(false)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert onClose={() => setToastOpen(false)} severity="success" variant="filled" sx={{ width: '100%' }}>
+                    {successMessage}
+                </Alert>
+            </Snackbar>
         </form>
     );
 }
