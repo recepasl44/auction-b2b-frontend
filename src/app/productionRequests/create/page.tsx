@@ -21,6 +21,10 @@ import {
   Stepper,
   TextField,
   Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
 import { useRouter } from 'next/navigation';
@@ -84,7 +88,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
   const [errorMessage, setErrorMessage] = React.useState('');
   const [productId, setProductId] = React.useState<number | null>(null);
   const router = useRouter();
-
+const [openModal, setOpenModal] = React.useState(false);
   const [form, setForm] = React.useState({
     category: '' as Category | '',
     description: '',
@@ -105,13 +109,15 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
 
   const formatLabel = (label: string) =>
     label.charAt(0).toUpperCase() + label.slice(1);
-
-  const formatValue = (key: string, value: string) => {
-    if (key === 'gluten') return `${value}%`;
-    if (key === 'protein') return `${value} g`;
-    return value;
+ const handleModalClose = () => {
+    setOpenModal(false);
+   router.push('/productionRequests/list');
   };
-
+const formatValue = (key: string, value: string) => {
+  if (['gluten', 'ash', 'moisture'].includes(key)) return `${value}%`;
+  if (key === 'protein') return `${value} g`;
+  return value;
+};
   const handleChange = (field: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -149,6 +155,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
       console.log('Product created with ID:', id);
       setProductId(id);
       handleNext();
+      
     } catch (err: any) {
       console.error('Error creating product:', err);
       setErrorMessage(err.response?.data?.message || 'Failed to create product.');
@@ -165,6 +172,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
     try {
       await axiosClient.post('/productionRequests', { productId });
       toast.success('Production request created successfully.');
+      setOpenModal(true); 
     } catch (err: any) {
       console.error('Error creating production request:', err);
       setErrorMessage(err.response?.data?.message || 'Failed to create request.');
@@ -179,23 +187,28 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
     return (
       <>
         {'flourTypeOptions' in config && (
-          <Grid xs={12} md={6}>
+            <Grid xs={12} md={6}>
             <FormControl fullWidth required>
               <InputLabel>Flour Type</InputLabel>
               <Select
-                label="Flour Type"
-                value={form.flourType}
-                onChange={(e) => handleChange('flourType', e.target.value)}
+              label="Flour Type"
+              value={form.flourType}
+              onChange={(e) => handleChange('flourType', e.target.value)}
               >
-                {config.flourTypeOptions!.map((opt) => (
-                  <MenuItem key={opt} value={opt}>
-                    {opt}
-                  </MenuItem>
-                ))}
+              {form.flourType === "" && (
+                <MenuItem value="">
+                <em>Select the flour type</em>
+                </MenuItem>
+              )}
+              {config.flourTypeOptions!.map((opt) => (
+                <MenuItem key={opt} value={opt}>
+                {opt}
+                </MenuItem>
+              ))}
               </Select>
               <FormHelperText>Please select the flour type</FormHelperText>
             </FormControl>
-          </Grid>
+            </Grid>
         )}
 
         {'packageSizeOptions' in config && (
@@ -233,6 +246,8 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                   </MenuItem>
                 ))}
               </Select>
+                            <FormHelperText>Please select the quality of wheat content</FormHelperText>
+
             </FormControl>
           </Grid>
         )}
@@ -299,7 +314,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                   value={form.protein}
                   onChange={(e) => handleChange('protein', e.target.value)}
                 />
-                <FormHelperText>g value</FormHelperText>
+                <FormHelperText>gram value</FormHelperText>
               </FormControl>
             </Grid>
             <Grid xs={12} md={6}>
@@ -367,17 +382,16 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                   </FormControl>
                 </Grid>
                      <Grid xs={12} md={6}>
-                  <FormControl fullWidth required>
-                    <InputLabel>name</InputLabel>
-                  <TextField
-                      label="name"
-                      placeholder="Enter the value you need"
-                      value={form.name}
-                      onChange={(e) => handleChange('name', e.target.value)}
-                      fullWidth
-                    />
-                  </FormControl>
-                </Grid>
+                      <FormControl fullWidth required>
+                      <TextField
+                        label="Name"
+                        placeholder="Name"
+                        value={form.name}
+                        onChange={(e) => handleChange('name', e.target.value)}
+                        fullWidth
+                      />
+                      </FormControl>
+                    </Grid>
                 {renderCategoryFields()}
 
                 <Grid xs={12} md={6}>
@@ -388,6 +402,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                       value={form.priceType}
                       onChange={(e) => handleChange('priceType', e.target.value)}
                     >
+                      <MenuItem value=""> </MenuItem>
                       <MenuItem value="CIF">CIF</MenuItem>
                       <MenuItem value="FOB">FOB</MenuItem>
                     </Select>
@@ -415,26 +430,22 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                       value={form.orderQuantity}
                       onChange={(e) => handleChange('orderQuantity', e.target.value)}
                     />
-                    <FormHelperText>Number of containers you want to order</FormHelperText>
                   </FormControl>
                 </Grid>
                 <Grid xs={12} md={6}>
-                  <FormControl fullWidth required>
-                    <InputLabel>Description</InputLabel>
-                    <TextField
-                      label="Description"
-                      placeholder="Please write any detailed information you would like to add"
-                      value={form.description}
-                      onChange={(e) => handleChange('description', e.target.value)}
-                      fullWidth
-                    />
-                  </FormControl>
+                  <TextField
+                  label="Description"
+                  placeholder="Please write any detailed information you would like to add"
+                  value={form.description}
+                  onChange={(e) => handleChange('description', e.target.value)}
+                  fullWidth
+                  />
                 </Grid>
               </Grid>
             </CardContent>
             <Divider />
             <CardActions sx={{ justifyContent: 'flex-end' }}>
-              <Button type="submit" variant="contained" disabled={submitting}>
+               <Button type="submit" variant="contained" disabled={submitting}>
                 {submitting ? 'Submitting...' : 'Next'}
               </Button>
             </CardActions>
@@ -472,6 +483,20 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
           </Card>
         </form>
       )}
-    </Box>
+     <Dialog open={openModal} onClose={handleModalClose}>
+      <DialogTitle>İşlem Tamam</DialogTitle>
+       <DialogContent>
+          <Typography>
+            Üretim talebiniz alınmıştır. Taleplerinizi inceleyeceğiniz sayfaya
+            yönlendiriliyorsunuz.
+         </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleModalClose} variant="contained" autoFocus>
+            Tamam
+          </Button>
+       </DialogActions>
+      </Dialog>
+   </Box>
   );
 }

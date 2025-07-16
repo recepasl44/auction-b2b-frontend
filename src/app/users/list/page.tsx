@@ -146,136 +146,138 @@ export default function ListUsersPage() {
     };
 
     return (
-        <Card>
-            <CardHeader
-                title="List All Users"
-                subheader="Browse registered users, or add new ones"
-            />
-            <Divider />
-            <CardContent>
-                <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-                    <TextField
-                        size="small"
-                        variant="outlined"
-                        placeholder="Search users"
-                        value={searchText}
-                        onChange={handleSearchChange}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <MagnifyingGlassIcon size={18} />
-                                </InputAdornment>
-                            ),
-                        }}
-                        sx={{ maxWidth: 350 }}
-                    />
-                    <Button variant="contained" startIcon={<PlusIcon />} onClick={handleNewUser}>
-                        New User
-                    </Button>
-                </Stack>
-
-                {loading && (
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                        <CircularProgress size={20} />
-                        <Typography variant="body2">Loading users...</Typography>
+        <>
+            <Card>
+                <CardHeader
+                    title="List All Users"
+                    subheader="Browse registered users, or add new ones"
+                />
+                <Divider />
+                <CardContent>
+                    <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+                        <TextField
+                            size="small"
+                            variant="outlined"
+                            placeholder="Search users"
+                            value={searchText}
+                            onChange={handleSearchChange}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <MagnifyingGlassIcon size={18} />
+                                    </InputAdornment>
+                                ),
+                            }}
+                            sx={{ maxWidth: 350 }}
+                        />
+                        <Button variant="contained" startIcon={<PlusIcon />} onClick={handleNewUser}>
+                            New User
+                        </Button>
                     </Stack>
-                )}
 
-                {error && !loading && (
-                    <Typography color="error" variant="body2">
-                        {error}
-                    </Typography>
-                )}
+                    {loading && (
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                            <CircularProgress size={20} />
+                            <Typography variant="body2">Loading users...</Typography>
+                        </Stack>
+                    )}
 
-                {!loading && !error && users.length === 0 && (
-                    <Typography variant="body2">No users found.</Typography>
-                )}
+                    {error && !loading && (
+                        <Typography color="error" variant="body2">
+                            {error}
+                        </Typography>
+                    )}
 
-                {!loading && !error && users.length > 0 && (
-                    <TableContainer component={Paper} sx={{ mt: 2 }}>
-                        <Table>
-                            <TableHead sx={{ backgroundColor: 'grey.50' }}>
-                                <TableRow>
-                                    <TableCell>User ID</TableCell>
-                                    <TableCell>Email</TableCell>
-                                    <TableCell>Name</TableCell>
-                                    <TableCell>Role</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {users.map((item) => (
-                                    <TableRow hover key={item.id}>
-                                        <TableCell>{item.id}</TableCell>
-                                        <TableCell>{item.email}</TableCell>
-                                        <TableCell>{item.name}</TableCell>
-                                        <TableCell>{item.role_id}</TableCell>
+                    {!loading && !error && users.length === 0 && (
+                        <Typography variant="body2">No users found.</Typography>
+                    )}
+
+                    {!loading && !error && users.length > 0 && (
+                        <TableContainer component={Paper} sx={{ mt: 2 }}>
+                            <Table>
+                                <TableHead sx={{ backgroundColor: 'grey.50' }}>
+                                    <TableRow>
+                                        <TableCell>User ID</TableCell>
+                                        <TableCell>Email</TableCell>
+                                        <TableCell>Name</TableCell>
+                                        <TableCell>Role</TableCell>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                )}
-            </CardContent>
-            <CardActions sx={{ justifyContent: 'flex-end' }}>
-                <TablePagination
-                    component="div"
-                    count={totalCount}
-                    page={page}
-                    rowsPerPage={rowsPerPage}
-                    onPageChange={handlePageChange}
-                    onRowsPerPageChange={handleRowsPerPageChange}
-                    rowsPerPageOptions={[5, 10, 25]}
-                    labelRowsPerPage="Users per page"
-                />
-            </CardActions>
-        </Card>
-        <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
-            <DialogTitle>New User</DialogTitle>
-            <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-                <TextField
-                    label="Email"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    fullWidth
-                />
-                <TextField
-                    label="Name"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    fullWidth
-                />
-                <TextField
-                    label="Password"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    fullWidth
-                />
-                <FormControl fullWidth>
-                    <InputLabel>Role</InputLabel>
-                    <Select
-                        label="Role"
-                        value={newRoleId}
-                        onChange={(e) => setNewRoleId(Number(e.target.value))}
-                    >
-                        <MenuItem value={1}>Admin</MenuItem>
-                        <MenuItem value={2}>Customer</MenuItem>
-                        <MenuItem value={3}>Manufacturer</MenuItem>
-                        <MenuItem value={4}>Supplier</MenuItem>
-                    </Select>
-                </FormControl>
-                {submitError && (
-                    <Typography color="error" variant="body2">
-                        {submitError}
-                    </Typography>
-                )}
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={() => setOpenDialog(false)} disabled={submitLoading}>Cancel</Button>
-                <Button variant="contained" onClick={handleCreate} disabled={submitLoading}>
-                    {submitLoading ? 'Saving...' : 'Save'}
-                </Button>
-            </DialogActions>
-        </Dialog>
+                                </TableHead>
+                                <TableBody>
+                                    {users.map((item) => (
+                                        <TableRow hover key={item.id}>
+                                            <TableCell>{item.id}</TableCell>
+                                            <TableCell>{item.email}</TableCell>
+                                            <TableCell>{item.name}</TableCell>
+                                            <TableCell>{item.role_id}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    )}
+                </CardContent>
+                <CardActions sx={{ justifyContent: 'flex-end' }}>
+                    <TablePagination
+                        component="div"
+                        count={totalCount}
+                        page={page}
+                        rowsPerPage={rowsPerPage}
+                        onPageChange={handlePageChange}
+                        onRowsPerPageChange={handleRowsPerPageChange}
+                        rowsPerPageOptions={[5, 10, 25]}
+                        labelRowsPerPage="Users per page"
+                    />
+                </CardActions>
+            </Card>
+            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
+                <DialogTitle>New User</DialogTitle>
+                <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                    <TextField
+                        label="Email"
+                        value={newEmail}
+                        onChange={(e) => setNewEmail(e.target.value)}
+                        fullWidth
+                    />
+                    <TextField
+                        label="Name"
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        fullWidth
+                    />
+                    <TextField
+                        label="Password"
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        fullWidth
+                    />
+                    <FormControl fullWidth>
+                        <InputLabel>Role</InputLabel>
+                        <Select
+                            label="Role"
+                            value={newRoleId}
+                            onChange={(e) => setNewRoleId(Number(e.target.value))}
+                        >
+                            <MenuItem value={1}>Admin</MenuItem>
+                            <MenuItem value={2}>Customer</MenuItem>
+                            <MenuItem value={3}>Manufacturer</MenuItem>
+                            <MenuItem value={4}>Supplier</MenuItem>
+                        </Select>
+                    </FormControl>
+                    {submitError && (
+                        <Typography color="error" variant="body2">
+                            {submitError}
+                        </Typography>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenDialog(false)} disabled={submitLoading}>Cancel</Button>
+                    <Button variant="contained" onClick={handleCreate} disabled={submitLoading}>
+                        {submitLoading ? 'Saving...' : 'Save'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </>
     );
 }

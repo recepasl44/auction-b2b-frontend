@@ -19,7 +19,7 @@ import {
     Stack,
     Box,
     Dialog,
-    DialogTitle,
+    DialogTitle,    
     DialogContent,
     DialogActions,
     Checkbox,
@@ -196,10 +196,16 @@ const handleOpenSuppliers = () => {
                                     type="datetime-local"
                                     placeholder="YYYY-MM-DD HH:mm"
                                     value={startTime}
-                                    onChange={(e) => setStartTime(e.target.value)}
+                                    onChange={(e) => {
+                                        setStartTime(e.target.value);
+                                        // When a complete datetime (length 16 for "YYYY-MM-DDTHH:mm") is entered, remove focus.
+                                        if (e.target.value.length === 16) {
+                                            e.target.blur();
+                                        }
+                                    }}
                                 />
                                 <FormHelperText>
-                                    When the auction will begin (UTC ISO format).
+                                    When the auction will begin (UTC ISO format). The input will auto-close after entering a complete datetime.
                                 </FormHelperText>
                             </FormControl>
                         </Grid>
@@ -211,7 +217,12 @@ const handleOpenSuppliers = () => {
                                     label="End Time"
                                     type="datetime-local"
                                     value={endTime}
-                                    onChange={(e) => setEndTime(e.target.value)}
+                                    onChange={(e) => {
+                                        setEndTime(e.target.value);
+                                        if (e.target.value.length === 16) {
+                                            e.target.blur();
+                                        }
+                                    }}
                                 />
                                 <FormHelperText>
                                     Auction closing time. Must be after start time.

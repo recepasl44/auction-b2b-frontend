@@ -116,8 +116,14 @@ export default function ListAuctionsPage() {
                 if (!isMounted) return;
                 // Suppose your API returns { auctions: AuctionItem[], total: number }
                 const data = res.data as { auctions: AuctionItem[]; total: number };
-                const items = data.auctions || [];
-                const total = data.total || 0;
+  const items = (data.auctions || [])
+                    .slice()                                   // kopya al
+                   .sort((a, b) => {
+                     /* startTime varsa ona, yoksa id’ye bak */
+                      const aVal = a.startTime ? dayjs(a.startTime).valueOf() : a.id;
+                      const bVal = b.startTime ? dayjs(b.startTime).valueOf() : b.id;
+                      return bVal - aVal;                      // desc
+                    });                const total = data.total || 0;
                 setAuctions(items);
                 setTotalCount(total);
                 if (isMounted) setLoading(false);
