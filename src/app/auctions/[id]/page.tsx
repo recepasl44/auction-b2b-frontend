@@ -100,12 +100,12 @@ interface Bid {
 }
 
 //------------------------------------------------------------------
-// Theme – marka rengi, font, vs.
+// Theme – brand colors, fonts, etc.
 //------------------------------------------------------------------
 const customTheme = createTheme({
-  palette: {
-    primary: { main: '#FFCC00' }, // marka vurgusu (sarı)
-    secondary: { main: '#6A5BFF' }, // CTA (mor)
+    palette: {
+      primary: { main: '#FFCC00' }, // brand highlight (yellow)
+      secondary: { main: '#6A5BFF' }, // CTA (purple)
     text: {
       primary: '#333333',
       secondary: '#6E6E76',
@@ -119,13 +119,13 @@ const customTheme = createTheme({
     body1: { fontSize: 16 },
     body2: { fontSize: 14 },
   },
-  shape: {
-    borderRadius: 4, // Kart köşeleri 4 px
+    shape: {
+      borderRadius: 4, // Card corners 4px
   },
 });
 
 //------------------------------------------------------------------
-// Stil eklemeleri (Flip clock, pulse, vb.)
+// Additional styles (flip clock, pulse, etc.)
 //------------------------------------------------------------------
 const extraStyles = `
 /* Flip clock basamak */
@@ -142,7 +142,7 @@ const extraStyles = `
 `;
 
 //------------------------------------------------------------------
-// FlipCard & Countdown3D bileşenleri
+// FlipCard & Countdown3D components
 //------------------------------------------------------------------
 function FlipCard({ digit }: { digit: string }) {
   const [current, setCurrent] = useState(digit);
@@ -185,7 +185,7 @@ function Countdown3D({ timeText }: { timeText: string }) {
 }
 
 //------------------------------------------------------------------
-// SimpleCountdown – pulse & sticky davranış
+// SimpleCountdown – pulse & sticky behaviour
 //------------------------------------------------------------------
 function SimpleCountdown({ endTime }: { endTime: string }) {
   const [time, setTime] = useState('');
@@ -243,7 +243,7 @@ function Header({ nickname }: { nickname?: string }) {
   
         </Box>
 
-            Geçici Kullanıcı Adınız{nickname && (
+            Temporary Username{nickname && (
           <Typography variant="subtitle1" fontWeight="bold" color="text.primary">
             {nickname}
           </Typography>
@@ -375,7 +375,7 @@ setIsActive(now >= start && now <= end);
         return arr;
       });
       setCurrentPrice(payload.amount);
-      setToast({ open: true, msg: 'Yeni teklif alındı', type: 'success' });
+      setToast({ open: true, msg: 'New bid received', type: 'success' });
     });
 
     return () => {
@@ -432,12 +432,12 @@ setIsActive(now >= start && now <= end);
     const end = parseIsoAsLocal(auction.endTime);
     const warnDiff = end - Date.now() - 15 * 60 * 1000;
     if (warnDiff <= 0) {
-      setToast({ open: true, msg: 'Ihalenin bitmesine 15 dakika kaldi', type: 'warning' });
+      setToast({ open: true, msg: '15 minutes left until the auction ends', type: 'warning' });
       warningShown.current = true;
       return;
     }
     const t = setTimeout(() => {
-      setToast({ open: true, msg: 'Ihalenin bitmesine 15 dakika kaldi', type: 'warning' });
+      setToast({ open: true, msg: '15 minutes left until the auction ends', type: 'warning' });
       warningShown.current = true;
     }, warnDiff);
     return () => clearTimeout(t);
@@ -456,28 +456,28 @@ setIsActive(now >= start && now <= end);
 
     if (dir === 'asc') {
       if (amount < start || amount > end) {
-        setToast({ open: true, msg: 'Teklif aralık dışında', type: 'error' });
+        setToast({ open: true, msg: 'Bid outside range', type: 'error' });
         return;
       }
       if (amount <= currentPrice) {
-        setToast({ open: true, msg: 'Daha yüksek teklif verin', type: 'error' });
+        setToast({ open: true, msg: 'Please bid higher', type: 'error' });
         return;
       }
       if ((amount - start) % step !== 0 || amount - currentPrice < step) {
-        setToast({ open: true, msg: `Minimum artış ${step}`, type: 'error' });
+        setToast({ open: true, msg: `Minimum increment ${step}`, type: 'error' });
         return;
       }
     } else {
       if (amount > start || amount < end) {
-        setToast({ open: true, msg: 'Teklif aralık dışında', type: 'error' });
+        setToast({ open: true, msg: 'Bid outside range', type: 'error' });
         return;
       }
       if (amount >= currentPrice) {
-        setToast({ open: true, msg: 'Daha düşük teklif verin', type: 'error' });
+        setToast({ open: true, msg: 'Please bid lower', type: 'error' });
         return;
       }
       if ((start - amount) % step !== 0 || currentPrice - amount < step) {
-        setToast({ open: true, msg: `Minimum azalış ${step}`, type: 'error' });
+        setToast({ open: true, msg: `Minimum decrement ${step}`, type: 'error' });
         return;
       }
     }
@@ -507,15 +507,15 @@ setIsActive(now >= start && now <= end);
         return arr;
       });
       setCurrentPrice(amount);
-      setToast({ open: true, msg: 'Teklif gönderildi', type: 'success' });
+      setToast({ open: true, msg: 'Bid submitted', type: 'success' });
     } catch (err) {
       console.error(err);
-      setToast({ open: true, msg: 'Teklif hatası', type: 'error' });
+      setToast({ open: true, msg: 'Bid error', type: 'error' });
     }
   };
 
   //----------------------------------------------------------------
-  // UI Yardımcıları
+  // UI Helpers
   //----------------------------------------------------------------
   const handleChangeTab = (_: SyntheticEvent, v: number) => setActiveTab(v);
 
@@ -551,7 +551,7 @@ setIsActive(now >= start && now <= end);
         </Box>
       )}
 
-      {/* Başlık & konum */}
+      {/* Title & location */}
       <Typography variant="h1" gutterBottom>
         {auction?.title}
       </Typography>
@@ -573,9 +573,9 @@ setIsActive(now >= start && now <= end);
           mb: 1,
         }}
       >
-        <Tab label="Ürün Özellikleri" />
-        <Tab label="Açıklama" />
-        <Tab label="Teknik Form" />
+        <Tab label="Product Features" />
+        <Tab label="Description" />
+        <Tab label="Technical Form" />
       </Tabs>
       <Divider sx={{ mb: 2 }} />
 
@@ -612,13 +612,13 @@ setIsActive(now >= start && now <= end);
         </Stack>
       )}
 
-      {/* Görsel */}
+      {/* Image */}
       {auction?.product?.images?.[0] ? (
         <Box
           component="img"
           src={auction.product.images[0]}
           sx={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', borderRadius: 2, mt: 2 }}
-          alt="Ürün görseli"
+          alt="Product image"
         />
       ) : (
         <Box
@@ -634,7 +634,7 @@ setIsActive(now >= start && now <= end);
           }}
         >
           <Typography variant="body2" color="text.secondary">
-            Fotoğraf bulunamadı
+            Photo not available
           </Typography>
         </Box>
       )}
@@ -651,13 +651,13 @@ setIsActive(now >= start && now <= end);
         {auction && <SimpleCountdown endTime={auction.endTime} />}
       </Box>
 
-      {/* Ürün No & start price */}
+      {/* Product ID & start price */}
       <Stack spacing={1} sx={{ mt: 1 }}>
-        <Typography variant="h2">Ürün No: {auction?.id}</Typography>
+        <Typography variant="h2">Product ID: {auction?.id}</Typography>
         <Divider />
         <Stack direction="row" spacing={1} alignItems="center">
           <Typography variant="body2" color="text.secondary">
-            Başlangıç Fiyatı
+            Starting Price
           </Typography>
           <Typography variant="body1" fontWeight={700}>
             {parseFloat(auction?.startPrice || '0').toLocaleString()} {auction?.baseCurrency}
@@ -666,7 +666,7 @@ setIsActive(now >= start && now <= end);
         <Divider />
         <Stack direction="row" spacing={1} alignItems="center">
           <Typography variant="body2" color="text.secondary">
-            Mevcut Teklif
+            Current Bid
           </Typography>
           <Typography variant="h4" color="success.main" fontWeight={700}>
             {currentPrice.toLocaleString()} {auction?.baseCurrency}
@@ -693,7 +693,7 @@ setIsActive(now >= start && now <= end);
       {/* Manual bid */}
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
         <TextField
-          placeholder="Manuel Teklif"
+          placeholder="Manual Bid"
           size="small"
           type="number"
           defaultValue={nextPrices[0]}
@@ -705,11 +705,11 @@ setIsActive(now >= start && now <= end);
           color="secondary"
           sx={{ fontWeight: 700, px: 3 }}
           onClick={() => {
-            const input = document.querySelector<HTMLInputElement>('input[placeholder="Manuel Teklif"]');
+            const input = document.querySelector<HTMLInputElement>('input[placeholder="Manual Bid"]');
             if (input) placeBid(Number(input.value));
           }}
         >
-          TEKLİF VER
+          PLACE BID
         </Button>
       </Stack>
 
@@ -727,7 +727,7 @@ setIsActive(now >= start && now <= end);
           }
         }}
       >
-        {autoBid ? 'Otomatik Teklifi Durdur' : 'Otomatik Teklif Moduna Geç'}
+        {autoBid ? 'Stop Auto Bid' : 'Enable Auto Bid Mode'}
       </Button>
 
       <Dialog
@@ -739,7 +739,7 @@ setIsActive(now >= start && now <= end);
           }
         }}
       >
-        <DialogTitle>Otomatik Teklif Limiti</DialogTitle>
+        <DialogTitle>Auto Bid Limit</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -770,13 +770,13 @@ setIsActive(now >= start && now <= end);
 
       {/* Bid history */}
       <Typography variant="h2" sx={{ mb: 1 }}>
-        Teklif Geçmişi
+        Bid History
       </Typography>
       <Divider sx={{ mb: 1 }} />
       <Box sx={{ maxHeight: 320, overflowY: 'auto', pr: 1 }}>
         {bids.length === 0 && (
           <Typography variant="body2" color="text.secondary">
-            Henüz teklif yok
+            No bids yet
           </Typography>
         )}
         {bids.map((b, i) => (
@@ -833,7 +833,7 @@ setIsActive(now >= start && now <= end);
         <style>{extraStyles}</style>
         <Header />
         <Typography sx={{ mt: 8, textAlign: 'center' }} color="error">
-          {error || 'Auction bulunamadı'}
+          {error || 'Auction not found'}
         </Typography>
       </ThemeProvider>
     );
@@ -844,7 +844,7 @@ setIsActive(now >= start && now <= end);
         <style>{extraStyles}</style>
         <Header nickname={auction.your_nickname} />
         <Typography sx={{ mt: 8, textAlign: 'center' }}>
-          İhale aktif değil.
+          Auction is not active.
         </Typography>
         <Dialog open={winnerOpen} onClose={handleWinnerClose}>
           <DialogTitle>Auction Ended</DialogTitle>
@@ -875,6 +875,14 @@ setIsActive(now >= start && now <= end);
           </Grid>
           <Grid item xs={12} md={4} lg={4}>
             <RightCard />
+          </Grid>
+          <Grid item xs={12} sx={{ mt: 2 }}>
+            <Card>
+              <CardHeader title="API Response" />
+              <CardContent>
+                <pre style={{ overflowX: 'auto' }}>{JSON.stringify(auction, null, 2)}</pre>
+              </CardContent>
+            </Card>
           </Grid>
         </Grid>
       </Box>
