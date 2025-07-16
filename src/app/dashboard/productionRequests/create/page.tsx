@@ -29,7 +29,7 @@ import { paths } from '@/paths';
 
 const PRODUCT_CONFIG = {
   'Wheat Flour': {
-    flourTypeOptions: ['All Purpose', 'Bread Flour', 'Baguette Flour', 'Biscuit Flour', 'Cake & Pastry'],
+    flourTypeOptions: ['All Purpose Flour', 'Bread Flour', 'Baguette Flour', 'Biscuit Flour', 'Cake & Pastry Flour'],
     packageSizeOptions: ['1 kg', '10 kg', '25 kg', '50 kg'],
   },
   Spaghetti: {
@@ -197,6 +197,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                   </MenuItem>
                 ))}
               </Select>
+              <FormHelperText>Please select the flour type</FormHelperText>
             </FormControl>
           </Grid>
         )}
@@ -216,6 +217,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                   </MenuItem>
                 ))}
               </Select>
+              <FormHelperText>Please select the package size</FormHelperText>
             </FormControl>
           </Grid>
         )}
@@ -273,6 +275,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                   </MenuItem>
                 ))}
               </Select>
+              <FormHelperText>Please select the carton type</FormHelperText>
             </FormControl>
           </Grid>
         )}
@@ -393,17 +396,6 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                     />
                   </FormControl>
                 </Grid>
-     <Grid xs={12} md={6}>
-                  <FormControl fullWidth required>
-                    <InputLabel>Description</InputLabel>
-                    <TextField
-                      label="Description"
-                      value={form.description}
-                      onChange={(e) => handleChange('description', e.target.value)}
-                      fullWidth
-                    />
-                  </FormControl>
-                </Grid>
                 {renderCategoryFields()}
 
                 <Grid xs={12} md={6}>
@@ -417,6 +409,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                       <MenuItem value="CIF">CIF</MenuItem>
                       <MenuItem value="FOB">FOB</MenuItem>
                     </Select>
+                    <FormHelperText>Please select the type of pricing</FormHelperText>
                   </FormControl>
                 </Grid>
                 <Grid xs={12} md={6}>
@@ -424,6 +417,7 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                     <InputLabel>Destination Port</InputLabel>
                     <OutlinedInput
                       label="Destination Port"
+                      placeholder="Please enter the name of destination port"
                       value={form.destinationPort}
                       onChange={(e) => handleChange('destinationPort', e.target.value)}
                     />
@@ -434,11 +428,24 @@ export default function ProductionRequestCreatePage(): React.JSX.Element {
                     <InputLabel>Order Quantity</InputLabel>
                     <OutlinedInput
                       label="Order Quantity"
+                      placeholder="Please enter number of containers you would like to order"
                       type="number"
                       value={form.orderQuantity}
                       onChange={(e) => handleChange('orderQuantity', e.target.value)}
                     />
-                    <FormHelperText>Number of containers</FormHelperText>
+                    <FormHelperText>Number of containers you want to order</FormHelperText>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} md={6}>
+                  <FormControl fullWidth required>
+                    <InputLabel>Description</InputLabel>
+                    <TextField
+                      label="Description"
+                      placeholder="Please write any detailed information you would like to add"
+                      value={form.description}
+                      onChange={(e) => handleChange('description', e.target.value)}
+                      fullWidth
+                    />
                   </FormControl>
                 </Grid>
               </Grid>
