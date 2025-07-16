@@ -34,7 +34,7 @@ import {
     MenuItem
 } from '@mui/material';
 import { MagnifyingGlass as MagnifyingGlassIcon } from '@phosphor-icons/react';
-import { Plus as PlusIcon } from '@phosphor-icons/react';
+import { Plus as PlusIcon, Eye as EyeIcon } from '@phosphor-icons/react';
 import dayjs from 'dayjs';
 import axiosClient from '@/services/axiosClient';
 import { useRouter } from 'next/navigation';
@@ -54,6 +54,7 @@ interface AuctionItem {
     endPrice?: number;
     incrementStep: number;
     baseCurrency: string;
+    status?: string;
       productionId?: number;
           invite_status?: string;
 
@@ -70,6 +71,7 @@ export default function ListAuctionsPage() {
     const [userId, setUserId] = React.useState<number | undefined>();
 
     const [auctions, setAuctions] = React.useState<AuctionItem[]>([]);
+    const [selectedAuction, setSelectedAuction] = React.useState<AuctionItem | null>(null);
     const [page, setPage] = React.useState(0);
     const [rowsPerPage, setRowsPerPage] = React.useState(5);
     const [totalCount, setTotalCount] = React.useState(0);
@@ -166,7 +168,7 @@ export default function ListAuctionsPage() {
                 setPrLoading(false);
             });
     };
- const handleInviteAction = (inviteId: number, action: 'accepted' | 'declined') => {
+const handleInviteAction = (inviteId: number, action: 'accepted' | 'declined') => {
         axiosClient
             .post('/auctions/respondInvite', {
                 inviteId,
@@ -182,6 +184,14 @@ export default function ListAuctionsPage() {
             .catch((err) => {
                 console.error('Error responding to invite:', err);
             });
+    };
+
+    const handleViewDetails = (item: AuctionItem) => {
+        setSelectedAuction(item);
+    };
+
+    const handleCloseDetails = () => {
+        setSelectedAuction(null);
     };
 
     return (
@@ -243,14 +253,13 @@ export default function ListAuctionsPage() {
                                     <TableCell>Auction ID</TableCell>
                                     <TableCell>Title</TableCell>
                                     <TableCell>Production ID</TableCell>
-
                                     <TableCell>Start - End</TableCell>
                                     <TableCell>Start Price</TableCell>
                                     <TableCell>End Price</TableCell>
                                     <TableCell>Increment</TableCell>
                                     <TableCell>Base Currency</TableCell>
-                                  {roleId === 3 && <TableCell align="right">Actions</TableCell>}
-
+                                    <TableCell>Status</TableCell>
+                                    <TableCell align="right">Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -268,36 +277,42 @@ export default function ListAuctionsPage() {
                                         <TableCell>{item.endPrice ?? '-'}</TableCell>
                                         <TableCell>{item.incrementStep}</TableCell>
                                         <TableCell>{item.baseCurrency}</TableCell>
-                                                   {roleId === 3 && (
-                                            <TableCell align="right">
-                                                {item.invite_status === 'invited' ? (
-                                                    <Stack direction="row" spacing={1}>
-                                                        <Button
-                                                            variant="contained"
-                                                            color="success"
-                                                            size="small"
-                                                            onClick={() => handleInviteAction(item.id, 'accepted')}
-                                                        >
-                                                            Accept
+                                        <TableCell>{item.status ?? '-'}</TableCell>
+                                        <TableCell align="right">
+                                            <Stack direction="row" spacing={1}>
+                                                {roleId === 3 && (
+                                                    item.invite_status === 'invited' ? (
+                                                        <>
+                                                            <Button
+                                                                variant="contained"
+                                                                color="success"
+                                                                size="small"
+                                                                onClick={() => handleInviteAction(item.id, 'accepted')}
+                                                            >
+                                                                Accept
+                                                            </Button>
+                                                            <Button
+                                                                variant="outlined"
+                                                                color="error"
+                                                                size="small"
+                                                                onClick={() => handleInviteAction(item.id, 'declined')}
+                                                            >
+                                                                Reject
+                                                            </Button>
+                                                        </>
+                                                    ) : item.invite_status === 'accepted' && dayjs(item.startTime).isBefore(dayjs()) ? (
+                                                        <Button variant="contained" size="small" onClick={() => router.push(`/auctions/${item.id}`)}>
+                                                            Join
                                                         </Button>
-                                                        <Button
-                                                            variant="outlined"
-                                                            color="error"
-                                                            size="small"
-                                                            onClick={() => handleInviteAction(item.id, 'declined')}
-                                                        >
-                                                            Reject
-                                                        </Button>
-                                                    </Stack>
-                                                ) : item.invite_status === 'accepted' && dayjs(item.startTime).isBefore(dayjs()) ? (
-                                                    <Button variant="contained" size="small" onClick={() => router.push(`/auctions/${item.id}`)}>
-                                                        Join
-                                                    </Button>
-                                                ) : (
-                                                    <Typography variant="body2">{item.invite_status ?? '-'}</Typography>
+                                                    ) : (
+                                                        <Typography variant="body2">{item.invite_status ?? '-'}</Typography>
+                                                    )
                                                 )}
-                                            </TableCell>
-                                        )}
+                                                <IconButton onClick={() => handleViewDetails(item)}>
+                                                    <EyeIcon size={20} />
+                                                </IconButton>
+                                            </Stack>
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -348,6 +363,24 @@ export default function ListAuctionsPage() {
             </DialogContent>
             <DialogActions>
                 <Button onClick={() => setOpenModal(false)}>Close</Button>
+            </DialogActions>
+        </Dialog>
+        <Dialog open={Boolean(selectedAuction)} onClose={handleCloseDetails} fullWidth maxWidth="sm">
+            <DialogTitle>Auction Details</DialogTitle>
+            <DialogContent dividers>
+                {selectedAuction && (
+                    <List>
+                        {Object.entries(selectedAuction).map(([key, value]) => (
+                            <ListItem key={key} disablePadding>
+                                <ListItemText primary={key} secondary={String(value ?? '-')}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+                )}
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={handleCloseDetails}>Close</Button>
             </DialogActions>
         </Dialog>
         </>

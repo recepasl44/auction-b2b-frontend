@@ -20,9 +20,20 @@ import {
     TablePagination,
     TableRow,
     Paper,
-    Typography
+    Typography,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select
 } from '@mui/material';
-import { MagnifyingGlass as MagnifyingGlassIcon, Plus as PlusIcon } from '@phosphor-icons/react';
+import {
+    MagnifyingGlass as MagnifyingGlassIcon,
+    Plus as PlusIcon,
+} from '@phosphor-icons/react';
 import axiosClient from '@/services/axiosClient';
 
 interface UserItem {
@@ -42,6 +53,14 @@ export default function ListUsersPage() {
     const [searchText, setSearchText] = React.useState('');
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState('');
+
+    const [openDialog, setOpenDialog] = React.useState(false);
+    const [newEmail, setNewEmail] = React.useState('');
+    const [newName, setNewName] = React.useState('');
+    const [newPassword, setNewPassword] = React.useState('');
+    const [newRoleId, setNewRoleId] = React.useState(2);
+    const [submitLoading, setSubmitLoading] = React.useState(false);
+    const [submitError, setSubmitError] = React.useState('');
 
     React.useEffect(() => {
         let isMounted = true;
@@ -96,8 +115,34 @@ export default function ListUsersPage() {
     };
 
     const handleNewUser = () => {
-        alert('New User clicked');
-        // Possibly router.push('/users/create');
+        setNewEmail('');
+        setNewName('');
+        setNewPassword('');
+        setNewRoleId(2);
+        setSubmitError('');
+        setOpenDialog(true);
+    };
+
+    const handleCreate = async () => {
+        setSubmitLoading(true);
+        setSubmitError('');
+        try {
+            await axiosClient.post('/users', {
+                email: newEmail,
+                password: newPassword,
+                name: newName,
+                role_id: newRoleId
+            });
+            setOpenDialog(false);
+            // refresh
+            setPage(0);
+            setSearchText('');
+        } catch (err: any) {
+            console.error('Error creating user:', err);
+            setSubmitError(err.response?.data?.message || 'Failed to create user.');
+        } finally {
+            setSubmitLoading(false);
+        }
     };
 
     return (
@@ -184,5 +229,53 @@ export default function ListUsersPage() {
                 />
             </CardActions>
         </Card>
+        <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
+            <DialogTitle>New User</DialogTitle>
+            <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                <TextField
+                    label="Email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    fullWidth
+                />
+                <TextField
+                    label="Name"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    fullWidth
+                />
+                <TextField
+                    label="Password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    fullWidth
+                />
+                <FormControl fullWidth>
+                    <InputLabel>Role</InputLabel>
+                    <Select
+                        label="Role"
+                        value={newRoleId}
+                        onChange={(e) => setNewRoleId(Number(e.target.value))}
+                    >
+                        <MenuItem value={1}>Admin</MenuItem>
+                        <MenuItem value={2}>Customer</MenuItem>
+                        <MenuItem value={3}>Manufacturer</MenuItem>
+                        <MenuItem value={4}>Supplier</MenuItem>
+                    </Select>
+                </FormControl>
+                {submitError && (
+                    <Typography color="error" variant="body2">
+                        {submitError}
+                    </Typography>
+                )}
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={() => setOpenDialog(false)} disabled={submitLoading}>Cancel</Button>
+                <Button variant="contained" onClick={handleCreate} disabled={submitLoading}>
+                    {submitLoading ? 'Saving...' : 'Save'}
+                </Button>
+            </DialogActions>
+        </Dialog>
     );
 }
