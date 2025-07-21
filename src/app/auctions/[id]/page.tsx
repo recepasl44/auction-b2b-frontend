@@ -50,6 +50,7 @@ import {
 //------------------------------------------------------------------
 interface Auction {
   sortDirection: string;
+  productImage?: string;
   id: number;
   description: string;
   title: string;
@@ -543,7 +544,15 @@ setIsActive(now >= start && now <= end);
       {/* Kategori badge */}
       {auction?.categoryPath && (
         <Box
-          sx={{ position: 'absolute', top: 12, right: 12, bgcolor: 'primary.main', px: 1, py: 0.25, borderRadius: 1 }}
+          sx={{
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            bgcolor: 'primary.main',
+            px: 1,
+            py: 0.25,
+            borderRadius: 1,
+          }}
         >
           <Typography variant="caption" fontWeight={600}>
             {auction.categoryPath}
@@ -562,62 +571,20 @@ setIsActive(now >= start && now <= end);
         </Typography>
       )}
 
-      {/* Tabs */}
-      <Tabs
-        value={activeTab}
-        onChange={handleChangeTab}
-        variant="scrollable"
-        scrollButtons="auto"
-        sx={{
-          '& .MuiTabs-indicator': { bgcolor: 'primary.main', height: 3, borderRadius: 2 },
-          mb: 1,
-        }}
-      >
-        <Tab label="Product Features" />
-        <Tab label="Description" />
-        <Tab label="Technical Form" />
-      </Tabs>
-      <Divider sx={{ mb: 2 }} />
+      {/* Purchase Order Details heading */}
 
-      {/* Tab content */}
-      {activeTab === 0 && (
-        <Stack spacing={1}>
-          {Object.entries(auction?.product?.attributes || {}).map(([k, v]) => (
-            <Stack
-              key={k}
-              direction="row"
-              spacing={1}
-              sx={{ p: 1, bgcolor: '#FAFAFA', borderRadius: 1 }}
-            >
-              <Typography variant="body2" fontWeight={600} sx={{ minWidth: 120 }}>
-                {k}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {v}
-              </Typography>
-            </Stack>
-          ))}
-        </Stack>
-      )}
-      {activeTab === 1 && (
-        <Typography variant="body2" whiteSpace="pre-wrap">
-          {auction?.product?.description}
-        </Typography>
-      )}
-      {activeTab === 2 && (
-        <Stack spacing={1}>
-          <Typography variant="body2">Price Type: {auction?.product?.priceType}</Typography>
-          <Typography variant="body2">Destination Port: {auction?.product?.destinationPort}</Typography>
-          <Typography variant="body2">Order Quantity: {auction?.product?.orderQuantity}</Typography>
-        </Stack>
-      )}
-
-      {/* Image */}
-      {auction?.product?.images?.[0] ? (
+      {/* Product image */}
+      {auction?.productImage ? (
         <Box
           component="img"
-          src={auction.product.images[0]}
-          sx={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', borderRadius: 2, mt: 2 }}
+          src={auction.productImage}
+          sx={{
+            width: '100%',
+            aspectRatio: '4 / 3',
+            objectFit: 'cover',
+            borderRadius: 2,
+            mt: 2,
+          }}
           alt="Product image"
         />
       ) : (
@@ -638,6 +605,45 @@ setIsActive(now >= start && now <= end);
           </Typography>
         </Box>
       )}
+      <Typography variant="h2" gutterBottom>
+        Purchase Order Details
+      </Typography>
+
+      {/* Product attributes */}
+         {/* Product details – dinamik attribute + sabit alanlar tek Grid */}
+      {auction?.product && (() => {
+        const productAttrs = auction.product.attributes
+          ? Object.entries(auction.product.attributes)
+          : [];
+        const staticDetails: [string, string][] = [
+          ['Price Type', auction.product.priceType ?? 'N/A'],
+         ['Destination Port', auction.product.destinationPort ?? 'N/A'],
+          ['Order Quantity', String(auction.product.orderQuantity ?? 'N/A')],
+  
+        ];
+        const details = [...productAttrs, ...staticDetails];
+
+        return (
+          <Grid container spacing={2} sx={{ mt: 2 }}>
+            {details.map(([label, value]) => (
+             <Grid item xs={12} sm={6} key={label}>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ p: 1, bgcolor: '#FAFAFA', borderRadius: 1 }}
+                >
+                  <Typography variant="body2" fontWeight={600} sx={{ minWidth: 120 }}>
+                    {label}:
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                   {value}
+                  </Typography>
+                </Stack>
+             </Grid>
+            ))}
+         </Grid>
+        );
+      })()}
     </Card>
   );
 
@@ -877,12 +883,7 @@ setIsActive(now >= start && now <= end);
             <RightCard />
           </Grid>
           <Grid item xs={12} sx={{ mt: 2 }}>
-            <Card>
-              <CardHeader title="API Response" />
-              <CardContent>
-                <pre style={{ overflowX: 'auto' }}>{JSON.stringify(auction, null, 2)}</pre>
-              </CardContent>
-            </Card>
+       
           </Grid>
         </Grid>
       </Box>
