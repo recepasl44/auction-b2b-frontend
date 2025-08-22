@@ -304,9 +304,14 @@ export default function AuctionPage() {
   const fetchAuction = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await axiosClient.get<{ auction: Auction }>(`/auctions/${auctionId}`);
+      const { data } = await axiosClient.get<{ auction: any }>(`/auctions/${auctionId}`);
       const raw = data.auction;
-      setAuction(raw);
+      const mapped: Auction = {
+        ...raw,
+        productImage:
+          raw.product_image ?? raw.productImage ?? raw.product?.images?.[0],
+      };
+      setAuction(mapped);
       setCurrentPrice(parseFloat(raw.lastOffer ?? raw.startPrice));
 
       // Bid history
