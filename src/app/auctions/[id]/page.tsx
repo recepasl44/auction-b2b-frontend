@@ -503,24 +503,6 @@ setIsActive(now >= start && now <= end);
         userId: JSON.parse(localStorage.getItem('auth-data') || '{}').user?.id,
         userCurrency: auction.baseCurrency,
       });
-      const nickname = auction.your_nickname ||
-        JSON.parse(localStorage.getItem('auth-data') || '{}').user?.nickname ||
-        'You';
-      const newBid: Bid = {
-        auctionId,
-        nickname,
-        amount,
-        timestamp: new Date().toISOString(),
-        price: `${amount.toLocaleString()} ${auction.baseCurrency}`,
-        date: new Date().toISOString(),
-      };
-      setBids((prev) => {
-        const arr = [newBid, ...prev];
-        setHighlightIndex(0);
-        setTimeout(() => setHighlightIndex(null), 1000);
-        return arr;
-      });
-      setCurrentPrice(amount);
       setToast({ open: true, msg: 'Bid submitted', type: 'success' });
     } catch (err) {
       console.error(err);
