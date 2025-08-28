@@ -374,14 +374,22 @@ setIsActive(now >= start && now <= end);
 
     socket.on('bidUpdated', (payload: Bid) => {
       if (payload.auctionId !== auctionId) return;
+      let isDuplicate = false;
       setBids((prev) => {
+        isDuplicate =
+          prev[0] &&
+          prev[0].nickname === payload.nickname &&
+          prev[0].amount === payload.amount;
+        if (isDuplicate) return prev;
         const arr = [payload, ...prev];
         setHighlightIndex(0);
         setTimeout(() => setHighlightIndex(null), 1000);
         return arr;
       });
-      setCurrentPrice(payload.amount);
-      setToast({ open: true, msg: 'New bid received', type: 'success' });
+      if (!isDuplicate) {
+        setCurrentPrice(payload.amount);
+        setToast({ open: true, msg: 'New bid received', type: 'success' });
+      }
     });
 
     return () => {
@@ -495,24 +503,6 @@ setIsActive(now >= start && now <= end);
         userId: JSON.parse(localStorage.getItem('auth-data') || '{}').user?.id,
         userCurrency: auction.baseCurrency,
       });
-      const nickname = auction.your_nickname ||
-        JSON.parse(localStorage.getItem('auth-data') || '{}').user?.nickname ||
-        'You';
-      const newBid: Bid = {
-        auctionId,
-        nickname,
-        amount,
-        timestamp: new Date().toISOString(),
-        price: `${amount.toLocaleString()} ${auction.baseCurrency}`,
-        date: new Date().toISOString(),
-      };
-      setBids((prev) => {
-        const arr = [newBid, ...prev];
-        setHighlightIndex(0);
-        setTimeout(() => setHighlightIndex(null), 1000);
-        return arr;
-      });
-      setCurrentPrice(amount);
       setToast({ open: true, msg: 'Bid submitted', type: 'success' });
     } catch (err) {
       console.error(err);
