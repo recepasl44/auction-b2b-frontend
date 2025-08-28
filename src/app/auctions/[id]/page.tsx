@@ -374,14 +374,22 @@ setIsActive(now >= start && now <= end);
 
     socket.on('bidUpdated', (payload: Bid) => {
       if (payload.auctionId !== auctionId) return;
+      let isDuplicate = false;
       setBids((prev) => {
+        isDuplicate =
+          prev[0] &&
+          prev[0].nickname === payload.nickname &&
+          prev[0].amount === payload.amount;
+        if (isDuplicate) return prev;
         const arr = [payload, ...prev];
         setHighlightIndex(0);
         setTimeout(() => setHighlightIndex(null), 1000);
         return arr;
       });
-      setCurrentPrice(payload.amount);
-      setToast({ open: true, msg: 'New bid received', type: 'success' });
+      if (!isDuplicate) {
+        setCurrentPrice(payload.amount);
+        setToast({ open: true, msg: 'New bid received', type: 'success' });
+      }
     });
 
     return () => {
